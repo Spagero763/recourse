@@ -31,6 +31,10 @@ const COMMERCE_SEGMENTS = new Set([
   "products", "product", "catalogue", "catalog", "shop", "store", "buy",
   "basket", "cart", "checkout", "search", "brands", "deals", "offers",
   "reviews", "blog", "news", "careers", "press",
+  // Retailers file their catalogue under a browse or category tree, and those
+  // trees are full of facet pages named after guarantees and returns.
+  "browse", "category", "categories", "dept", "department", "collections",
+  "collection", "sale", "clearance", "new-in", "gifts", "range",
 ]);
 
 export function scoreUrl(url: string): { score: number; kind: PolicyKind } | null {
@@ -43,9 +47,14 @@ export function scoreUrl(url: string): { score: number; kind: PolicyKind } | nul
 
   const segments = path.split("/").filter(Boolean);
   if (segments.length === 0) return null;
+  // A published policy sits near the root. Anything deeper is a catalogue
+  // facet or a help-centre article, never the binding document.
+  if (segments.length > 5) return null;
   if (segments.some((s) => COMMERCE_SEGMENTS.has(s))) return null;
-  // Product URLs carry a SKU: a token that is a long digit run.
-  if (segments.some((s) => /(^|-)\d{5,}(-|\.|$)/.test(s))) return null;
+  // Product and facet URLs carry an identifier: any long digit run, however
+  // it is prefixed, plus the facet markers retailers append to browse trees.
+  if (segments.some((s) => /\d{6,}/.test(s))) return null;
+  if (segments.some((s) => s === "_" || /^n-[a-z0-9]{6,}$/i.test(s))) return null;
 
   const tokens = new Set(
     segments.flatMap((s) => s.replace(/\.(html?|php|aspx)$/, "").split(/[-_]/)),
@@ -64,7 +73,8 @@ export function scoreUrl(url: string): { score: number; kind: PolicyKind } | nul
   }
   if (!best) return null;
 
-  // Policy pages sit near the root. Anything buried is a help-centre article.
+  // Even inside the allowed depth, a buried page is more likely a help-centre
+  // article than the policy itself.
   if (segments.length > 3) best.score -= 3;
   return best.score > 0 ? best : null;
 }
@@ -128,13 +138,27 @@ export const clearForCase = internalMutation({
       .query("policies")
       .withIndex("by_case", (q) => q.eq("caseId", args.caseId))
       .collect();
-    for (const row of stale) await ctx.db.delete(row._id);
+    for (const row of stale) {
+      if (row.kind === "statute") continue;
+      await ctx.db.delete(row._id);
+    }
 
+    const kept = new Set(
+      (
+        await ctx.db
+          .query("policies")
+          .withIndex("by_case", (q) => q.eq("caseId", args.caseId))
+          .collect()
+      ).map((p) => p._id),
+    );
     const orphaned = await ctx.db
       .query("clauses")
       .withIndex("by_case", (q) => q.eq("caseId", args.caseId))
       .collect();
-    for (const row of orphaned) await ctx.db.delete(row._id);
+    for (const row of orphaned) {
+      if (kept.has(row.policyId)) continue;
+      await ctx.db.delete(row._id);
+    }
 
     return null;
   },
@@ -283,5 +307,147 @@ export const search = query({
     return hits
       .filter((p) => p.caseId === args.caseId)
       .map(({ markdown, ...rest }) => ({ ...rest, length: markdown.length }));
+  },
+});
+
+// Consumer statute sits above whatever a company writes in its own terms, so a
+// claim that cites only the company's policy is arguing on their ground. These
+// are the sources worth quoting from, by jurisdiction.
+const STATUTE_SOURCES: Array<{ match: RegExp; hosts: Array<string>; hint: string }> = [
+  {
+    match: /united kingdom|uk|england|wales|scotland|britain/i,
+    hosts: ["legislation.gov.uk", "gov.uk"],
+    hint: "Consumer Rights Act 2015 goods must be of satisfactory quality repair replacement refund",
+  },
+  {
+    match: /ireland/i,
+    hosts: ["irishstatutebook.ie", "citizensinformation.ie"],
+    hint: "consumer rights act sale of goods refund remedy",
+  },
+  {
+    match: /united states|usa|us\b|america/i,
+    hosts: ["ftc.gov", "consumer.ftc.gov", "law.cornell.edu"],
+    hint: "Magnuson Moss warranty act refund remedy consumer",
+  },
+  {
+    match: /canada/i,
+    hosts: ["canada.ca", "ontario.ca"],
+    hint: "consumer protection act refund remedy",
+  },
+  {
+    match: /australia/i,
+    hosts: ["accc.gov.au", "legislation.gov.au"],
+    hint: "Australian Consumer Law guarantee repair replace refund",
+  },
+  {
+    match: /nigeria/i,
+    hosts: ["fccpc.gov.ng", "lawsofnigeria.placng.org"],
+    hint: "Federal Competition and Consumer Protection Act refund redress",
+  },
+];
+
+function statuteSource(jurisdiction: string | undefined) {
+  if (!jurisdiction) return undefined;
+  return STATUTE_SOURCES.find((s) => s.match.test(jurisdiction));
+}
+
+function resultsFrom(searched: unknown): Array<{ url: string; title?: string }> {
+  const web = (searched as { web?: Array<unknown>; data?: Array<unknown> });
+  const rows = web?.web ?? web?.data ?? [];
+  const out: Array<{ url: string; title?: string }> = [];
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const r = row as { url?: unknown; title?: unknown };
+    if (typeof r.url === "string") {
+      out.push({ url: r.url, title: typeof r.title === "string" ? r.title : undefined });
+    }
+  }
+  return out;
+}
+
+export const findStatute = action({
+  args: { caseId: v.id("cases") },
+  returns: v.object({ found: v.number(), searched: v.boolean() }),
+  handler: async (ctx, args) => {
+    const claim = await ctx.runMutation(internal.cases.byId, { caseId: args.caseId });
+    if (!claim) throw new Error("Case not found");
+
+    const source = statuteSource(claim.jurisdiction);
+    if (!source) {
+      // Guessing which country's law applies is worse than not citing any.
+      return { found: 0, searched: false };
+    }
+
+    // The hint alone is already a targeted legal query. Appending the
+    // claimant's narrative drowns it and the official sources fall out of the
+    // results entirely.
+    const searched = await firecrawl.search(ctx, source.hint, { limit: 8 });
+
+    // Only official sources. A law firm's summary of a statute is not the
+    // statute, and quoting one in a claim invites the reply that it is wrong.
+    const official = resultsFrom(searched).filter((r) => {
+      try {
+        const host = new URL(r.url).hostname.replace(/^www\./, "");
+        return source.hosts.some((h) => host === h || host.endsWith(`.${h}`));
+      } catch {
+        return false;
+      }
+    });
+
+    const pick = official.slice(0, 2);
+    for (const result of pick) {
+      await ctx.runMutation(internal.policies.queueStatute, {
+        caseId: args.caseId,
+        url: result.url,
+      });
+    }
+
+    await ctx.runMutation(internal.cases.logEvent, {
+      caseId: args.caseId,
+      kind: "statute_scan",
+      detail:
+        pick.length > 0
+          ? `Found ${pick.length} statutory source${pick.length === 1 ? "" : "s"} for ${claim.jurisdiction}`
+          : `No official statutory source found for ${claim.jurisdiction}`,
+    });
+
+    return { found: pick.length, searched: true };
+  },
+});
+
+export const queueStatute = internalMutation({
+  args: { caseId: v.id("cases"), url: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await crawlPool.enqueueAction(ctx, internal.policies.fetchStatute, {
+      caseId: args.caseId,
+      url: args.url,
+    });
+    return null;
+  },
+});
+
+export const fetchStatute = internalAction({
+  args: { caseId: v.id("cases"), url: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const page = await firecrawl.scrape(ctx, args.url, {
+      formats: ["markdown"],
+      onlyMainContent: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    const markdown = (page as { markdown?: string })?.markdown ?? "";
+    if (markdown.trim().length < 300) return null;
+
+    await ctx.runMutation(internal.policies.store, {
+      caseId: args.caseId,
+      url: args.url,
+      title:
+        (page as { metadata?: { title?: string } })?.metadata?.title ?? args.url,
+      kind: "statute",
+      markdown: markdown.slice(0, 400_000),
+    });
+    return null;
   },
 });

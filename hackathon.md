@@ -210,3 +210,25 @@ the policy URL scorer, which once accepted a Sony headphones listing because
 across "[5.]" and "5." so every letter looked sourced while being untraceable;
 and the letter segmenter, which must never lose or duplicate a character of the
 letter it is splitting.
+
+Statutory sources now get crawled, which the product had been claiming and not
+doing: "statute" existed only in the type unions and no case had ever held one.
+`policies.findStatute` searches by jurisdiction and accepts results only from
+official sources, because a law firm's summary of a statute is not the statute
+and quoting one invites the reply that it is wrong. The John Lewis claim now
+carries section 23 of the Consumer Rights Act 2015, the right to repair or
+replacement, extracted as [23(1)] through [23(8)].
+
+That work exposed two further defects. The URL scorer was tuned to one
+retailer's shapes: John Lewis files its catalogue under /browse, which was not
+in the commerce list, and its product ids are prefixed like p112608885, which
+the SKU pattern missed because it required the digits to follow a hyphen or
+start the segment. Three product pages were being read and paid for, and the
+"2 year guarantee" the letter leaned on had come from a freezers facet page
+rather than the guarantees policy. Rejection now covers browse trees, facet
+markers, any six digit run however prefixed, and anything deeper than five
+segments. All three real URLs are regression tests.
+
+Second, re-running a site scan deleted the statute along with the company
+pages, because the scan cleared every policy on the case rather than the ones
+it was replacing. Statutes are found by a different action and now survive.

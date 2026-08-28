@@ -34,6 +34,36 @@ describe("rejects pages a claim cannot be argued from", () => {
     expect(scoreUrl("https://example.com/returns/item-1029384756")).toBeNull();
   });
 
+  it("rejects a product page whose slug contains 'cancellation'", () => {
+    expect(
+      scoreUrl(
+        "https://www.johnlewis.com/apple-airpods-4th-generation-with-active-noise-cancellation-usb-c-charging-case-2024/p112608885",
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects a browse-tree facet named after a guarantee", () => {
+    expect(
+      scoreUrl(
+        "https://www.johnlewis.com/browse/electricals/fridges-freezers/freezers/interest-bearing-credit/2-year-guarantee-included/_/N-adrZq1imZ1yzvi2y",
+      ),
+    ).toBeNull();
+    expect(
+      scoreUrl(
+        "https://www.johnlewis.com/browse/furniture-lights/living-room/cabinets-sideboards/brown/15-year-guarantee-included/_/N-c52Z1z14184Z1yzvi2u",
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects a SKU however it is prefixed", () => {
+    expect(scoreUrl("https://example.com/returns/p112608885")).toBeNull();
+    expect(scoreUrl("https://example.com/returns/sku9988776")).toBeNull();
+  });
+
+  it("rejects anything buried more than five segments deep", () => {
+    expect(scoreUrl("https://example.com/a/b/c/d/e/refunds")).toBeNull();
+  });
+
   it("rejects the bare root", () => {
     expect(scoreUrl("https://example.com/")).toBeNull();
   });
@@ -52,6 +82,16 @@ describe("accepts the pages a claim is argued from", () => {
     ["https://example.com/legal/cancellation-policy", "refund"],
     ["https://example.com/warranty", "refund"],
     ["https://example.com/complaints", "other"],
+    // The pages that actually matter on John Lewis, alongside the facets above.
+    ["https://www.johnlewis.com/customer-services/returns", "refund"],
+    [
+      "https://www.johnlewis.com/customer-services/guarantees-and-troubleshooting-guides",
+      "refund",
+    ],
+    [
+      "https://www.johnlewis.com/customer-services/shopping-with-us/terms-and-conditions",
+      "terms",
+    ],
   ];
 
   for (const [url, kind] of accepted) {
