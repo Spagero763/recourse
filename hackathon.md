@@ -27,7 +27,7 @@ Nothing leaves the outbox without a human approving it.
 
 | | |
 | --- | --- |
-| Live URL | https://veracious-dinosaur-862.convex.site |
+| Live URL | https://hearty-lobster-443.convex.site |
 | Repository | https://github.com/Spagero763/recourse |
 | Demo video | not recorded yet |
 
@@ -175,3 +175,14 @@ silently generates nothing. 126 references across eight files compiled without
 warning and rendered as unstyled defaults. The custom properties were all
 present in the output, which is what made it look like a design problem rather
 than a build one.
+
+Moved to production. The backend deployed to hearty-lobster-443 with all eight
+components installed, and the frontend was rebuilt against the production
+backend before upload, so the published bundle points at
+hearty-lobster-443.convex.cloud rather than the dev deployment. Verified: the
+site returns 200, the bundle references only the prod backend, and
+/agentmail/webhook still rejects an unsigned payload with 401, which is the
+correct answer to a forged delivery.
+
+The dev deployment stays alive as the working environment. Editing against the
+URL judges will open is a bad way to spend three weeks.
