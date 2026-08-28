@@ -10,9 +10,11 @@
 
 import type * as cases from "../cases.js";
 import type * as clauses from "../clauses.js";
+import type * as drafting from "../drafting.js";
 import type * as email from "../email.js";
 import type * as extraction from "../extraction.js";
 import type * as http from "../http.js";
+import type * as letters from "../letters.js";
 import type * as lib_llm from "../lib/llm.js";
 import type * as policies from "../policies.js";
 
@@ -25,9 +27,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   cases: typeof cases;
   clauses: typeof clauses;
+  drafting: typeof drafting;
   email: typeof email;
   extraction: typeof extraction;
   http: typeof http;
+  letters: typeof letters;
   "lib/llm": typeof lib_llm;
   policies: typeof policies;
 }>;
