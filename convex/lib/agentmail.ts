@@ -87,3 +87,30 @@ export async function replyToMessage(
     { method: "POST", body: { text: message.text, labels: message.labels } },
   );
 }
+
+export type Webhook = {
+  webhook_id: string;
+  url: string;
+  enabled?: boolean;
+  event_types?: Array<string>;
+  secret?: string;
+};
+
+export async function listWebhooks(): Promise<Array<Webhook>> {
+  const body = await call<{ webhooks?: Array<Webhook> }>("/webhooks");
+  return body.webhooks ?? [];
+}
+
+export async function createWebhook(args: {
+  url: string;
+  eventTypes: Array<string>;
+}): Promise<Webhook> {
+  return await call<Webhook>("/webhooks", {
+    method: "POST",
+    body: { url: args.url, event_types: args.eventTypes },
+  });
+}
+
+export async function rawGet(path: string): Promise<unknown> {
+  return await call<unknown>(path);
+}
