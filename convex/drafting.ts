@@ -1,10 +1,11 @@
 "use node";
 
 import { v } from "convex/values";
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
 import { MODELS, completeJson, embed } from "./lib/llm";
+import { LADDER } from "./chase";
 
 const DRAFT_SYSTEM = `You write the opening letter in a consumer claim. It is sent by email from the claimant to the company.
 
@@ -124,5 +125,118 @@ export const draftClaim = action({
       body: dashes(draft.body.trim()),
       citedClauseIds,
     });
+  },
+});
+
+const FOLLOWUP_SYSTEM = `You write the next letter in an ongoing consumer claim by email.
+
+Return JSON: { "subject": string, "body": string, "citedRefs": string[] }
+
+You are given the original claim, everything already sent, and what the company said back. Write the next letter only.
+
+Rules:
+- Do not restate the whole history. Reference it in a clause and move forward.
+- If they asked the claimant for information, say plainly which items the claimant still needs to supply. Never invent an order number, a date, or a card detail to satisfy them.
+- If they raised a limit or exclusion, answer it once, using the supplied provisions.
+- Keep the reference numbers exactly as supplied. Never invent one.
+- Shorter than the first letter. Four to eight sentences.
+- Calm and factual. Escalation comes from stating consequences plainly, never from tone.
+- No placeholder text. The letter must be sendable exactly as written.
+- Use a spaced hyphen rather than an em dash.`;
+
+export const draftFollowUp = internalAction({
+  args: { caseId: v.id("cases") },
+  returns: v.union(v.null(), v.id("letters")),
+  handler: async (ctx, args): Promise<Id<"letters"> | null> => {
+    const claim: Doc<"cases"> | null = await ctx.runQuery(
+      internal.clauses.caseById,
+      { caseId: args.caseId },
+    );
+    if (!claim) return null;
+
+    const rung = LADDER[Math.min(claim.stage, LADDER.length - 1)];
+
+    const history: Array<Doc<"letters">> = await ctx.runQuery(
+      internal.letters.sentForCase,
+      { caseId: args.caseId },
+    );
+    const lastReply: Doc<"replies"> | null = await ctx.runQuery(
+      internal.replies.latest,
+      { caseId: args.caseId },
+    );
+
+    const [vector] = await embed([
+      `${claim.narrative} ${lastReply?.summary ?? ""} ${rung.instruction}`,
+    ]);
+    const hits = await ctx.vectorSearch("clauses", "by_embedding", {
+      vector,
+      filter: (q) => q.eq("caseId", args.caseId),
+      limit: 8,
+    });
+    const clauses: Array<Doc<"clauses">> = await ctx.runQuery(
+      internal.clauses.byIds,
+      { ids: hits.map((h) => h._id) },
+    );
+
+    const timeline = [
+      `Company: ${claim.counterparty}`,
+      `The original claim: ${claim.narrative}`,
+      claim.amountClaimed !== undefined
+        ? `Amount sought: ${claim.currency} ${claim.amountClaimed.toFixed(2)}`
+        : "",
+      claim.claimantName ? `Sign the letter as: ${claim.claimantName}` : "",
+      "",
+      "ALREADY SENT:",
+      ...history.map(
+        (l) =>
+          `${l.sentAt ? new Date(l.sentAt).toISOString().slice(0, 10) : "undated"} - ${l.subject}`,
+      ),
+      "",
+      lastReply
+        ? `THEIR LAST REPLY (${lastReply.disposition}): ${lastReply.summary}${
+            lastReply.missingInfo.length
+              ? `\nThey asked the claimant to supply: ${lastReply.missingInfo.join(", ")}`
+              : ""
+          }`
+        : "THEY HAVE NOT REPLIED AT ALL.",
+      "",
+      `WRITE THIS LETTER: ${rung.instruction}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const material = clauses
+      .map((c) => `[${c.ref}] ${c.heading}\n${c.text}`)
+      .join("\n\n");
+
+    const draft = await completeJson<Draft>({
+      model: MODELS.draft,
+      system: FOLLOWUP_SYSTEM,
+      user: `${timeline}\n\n--- PROVISIONS AVAILABLE ---\n${material}`,
+      maxTokens: 1600,
+    });
+
+    if (!draft?.body?.trim() || !draft?.subject?.trim()) return null;
+
+    const byRef = new Map(clauses.map((c) => [refKey(c.ref), c._id]));
+    const citedClauseIds: Array<Id<"clauses">> = [];
+    for (const ref of draft.citedRefs ?? []) {
+      const id = byRef.get(refKey(ref));
+      if (id && !citedClauseIds.includes(id)) citedClauseIds.push(id);
+    }
+
+    const letterId: Id<"letters"> = await ctx.runMutation(
+      internal.letters.store,
+      {
+        caseId: args.caseId,
+        kind: rung.kind,
+        subject: dashes(draft.subject.trim()).slice(0, 200),
+        body: dashes(draft.body.trim()),
+        citedClauseIds,
+      },
+    );
+
+    await ctx.runMutation(internal.chase.advance, { caseId: args.caseId });
+    return letterId;
   },
 });

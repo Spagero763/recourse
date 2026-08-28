@@ -269,3 +269,15 @@ export const pendingApproval = query({
       .order("desc")
       .first(),
 });
+
+export const sentForCase = internalQuery({
+  args: { caseId: v.id("cases") },
+  returns: v.array(v.any()),
+  handler: async (ctx, args): Promise<Array<Doc<"letters">>> => {
+    const rows = await ctx.db
+      .query("letters")
+      .withIndex("by_case", (q) => q.eq("caseId", args.caseId))
+      .collect();
+    return rows.filter((l) => l.status === "sent");
+  },
+});

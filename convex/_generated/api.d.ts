@@ -10,7 +10,9 @@
 
 import type * as analysis from "../analysis.js";
 import type * as cases from "../cases.js";
+import type * as chase from "../chase.js";
 import type * as clauses from "../clauses.js";
+import type * as crons from "../crons.js";
 import type * as drafting from "../drafting.js";
 import type * as email from "../email.js";
 import type * as extraction from "../extraction.js";
@@ -30,7 +32,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   analysis: typeof analysis;
   cases: typeof cases;
+  chase: typeof chase;
   clauses: typeof clauses;
+  crons: typeof crons;
   drafting: typeof drafting;
   email: typeof email;
   extraction: typeof extraction;
