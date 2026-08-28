@@ -54,6 +54,7 @@ async function extractOne(
     .join("\n");
 
   const found: Extracted["clauses"] = [];
+  let firstFailure: string | undefined;
   for (const excerpt of chunk(document.markdown)) {
     try {
       const result = await completeJson<Extracted>({
@@ -62,10 +63,16 @@ async function extractOne(
         user: `${context}\n\n--- DOCUMENT EXCERPT ---\n${excerpt}`,
       });
       if (Array.isArray(result?.clauses)) found.push(...result.clauses);
-    } catch {
-      // One bad excerpt should not lose the rest of the document.
+    } catch (error) {
+      // One bad excerpt should not lose the rest of the document, but a
+      // configuration fault fails every excerpt identically and must not be
+      // reported as "this policy had nothing in it".
+      firstFailure ??= error instanceof Error ? error.message : String(error);
       continue;
     }
+  }
+  if (found.length === 0 && firstFailure) {
+    throw new Error(`Extraction failed for ${document.url}: ${firstFailure}`);
   }
 
   const usable = found.filter(
