@@ -90,3 +90,22 @@ we are on 1.45, where `runMutation` gained an options argument; a cast is
 confined to the one call in `http.ts`. And AgentMail's free tier caps at three
 inboxes, so per-case inbox identity has to come from thread routing rather than
 an inbox per claim.
+
+Built the drafting side. `drafting.draftClaim` runs a vector search over the
+extracted clauses, splits them into what supports the claim and what will be
+quoted back to refuse it, and hands both to the model. The letter cites the
+company's own provisions by their own reference numbers and pre-empts the
+refusal rather than waiting for it.
+
+Two defects worth recording. The model returns citation refs the way it renders
+them in prose, bracketed as `[5.]`, while the stored ref is bare `5.`, so every
+citation silently failed to bind to its source and the letter looked sourced
+without being traceable. Refs are now compared on a stripped key. Separately,
+with no claimant name on file the model signed off "The claimant", which reads
+as machine-generated; a name is now a case field and its absence produces no
+signature block rather than a placeholder.
+
+Sending goes through `letters.approveAndSend`, which is the only path to a
+counterparty. A draft cannot skip it, and the mutation refuses anything not in
+`draft` status. Delivery is scheduled rather than inline so a slow send never
+blocks the approval.
