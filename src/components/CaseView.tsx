@@ -64,12 +64,12 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
 
   return (
     <div className="flex h-full min-w-0 flex-col">
-      <header className="border-b border-[--color-ink-200] bg-[--color-card] px-8 pb-5 pt-6">
+      <header className="relative border-b border-ink-200 bg-card px-8 pb-5 pt-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2.5">
               <span
-                className={`rounded-[--radius-sm] px-1.5 py-[2px] text-[10px] font-medium ${TONE_CLASS[state.tone]}`}
+                className={`rounded-sm px-1.5 py-[2px] text-[10px] font-medium ${TONE_CLASS[state.tone]}`}
               >
                 {state.label}
               </span>
@@ -82,10 +82,10 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
             <h2 className="mt-2 text-[21px] font-semibold tracking-[-0.015em]">
               {claim.title}
             </h2>
-            <p className="mt-1 text-[13px] text-[--color-ink-500]">
+            <p className="mt-1 text-[13px] text-ink-500">
               against {claim.counterparty}
               {claim.counterpartyDomain && (
-                <span className="font-mono text-[12px] text-[--color-ink-400]">
+                <span className="font-mono text-[12px] text-ink-400">
                   {" "}
                   · {claim.counterpartyDomain}
                 </span>
@@ -101,7 +101,7 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
                 {amount(claim.amountClaimed)}
               </div>
               {claim.settledAmount !== undefined && (
-                <div className="tnum text-[12px] text-[--color-state-won]">
+                <div className="tnum text-[12px] text-state-won">
                   <span className="cur">{symbolFor(claim.currency)}</span>
                   {amount(claim.settledAmount)} recovered
                 </div>
@@ -111,7 +111,7 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
         </div>
 
         {claim.inboxAddress && (
-          <p className="mt-4 font-mono text-[11px] text-[--color-ink-400]">
+          <p className="mt-4 font-mono text-[11px] text-ink-400">
             corresponding as {claim.inboxAddress}
           </p>
         )}
@@ -138,7 +138,7 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-5 overflow-hidden"
               >
-                <p className="rounded-[--radius-md] bg-[--color-state-dead-wash] px-4 py-3 text-[12px] text-[--color-state-dead]">
+                <p className="rounded-md bg-state-dead-wash px-4 py-3 text-[12px] text-state-dead">
                   {error}
                 </p>
               </motion.div>
@@ -172,7 +172,7 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
           )}
         </main>
 
-        <aside className="w-full shrink-0 border-t border-[--color-ink-200] bg-[--color-card] lg:w-[340px] lg:border-l lg:border-t-0">
+        <aside className="w-full shrink-0 border-t border-ink-200 bg-card lg:w-[340px] lg:border-l lg:border-t-0">
           <Evidence
             clauses={(clauses ?? []) as Array<Doc<"clauses">>}
             policies={policies ?? []}
@@ -247,28 +247,28 @@ function Steps({
   ];
 
   return (
-    <ol className="grid gap-px overflow-hidden rounded-[--radius-md] border border-[--color-ink-200] bg-[--color-ink-200] sm:grid-cols-3">
+    <ol className="grid gap-px overflow-hidden rounded-md border border-ink-200 bg-ink-200 sm:grid-cols-3">
       {steps.map((s) => (
-        <li key={s.key} className="bg-[--color-card] p-4">
+        <li key={s.key} className="group relative bg-card p-4 transition-colors hover:bg-paper">
           <div className="flex items-center gap-2">
             <span
               className={`grid h-[18px] w-[18px] place-items-center rounded-full font-mono text-[10px] ${
                 s.done
-                  ? "bg-[--color-state-won] text-white"
-                  : "bg-[--color-sunk] text-[--color-ink-400]"
+                  ? "bg-state-won text-white"
+                  : "bg-sunk text-ink-400"
               }`}
             >
               {s.done ? "✓" : s.n}
             </span>
             <span className="text-[13px] font-medium">{s.title}</span>
           </div>
-          <p className="mt-1.5 min-h-[32px] text-[12px] leading-snug text-[--color-ink-500]">
+          <p className="mt-1.5 min-h-[32px] text-[12px] leading-snug text-ink-500">
             {s.detail}
           </p>
           <button
             onClick={s.action}
             disabled={Boolean(busy) || s.blocked}
-            className="mt-1 text-[12px] font-medium text-[--color-accent] transition-opacity hover:underline disabled:cursor-not-allowed disabled:text-[--color-ink-300] disabled:no-underline"
+            className="mt-1 text-[12px] font-medium text-accent transition-opacity hover:underline disabled:cursor-not-allowed disabled:text-ink-300 disabled:no-underline"
           >
             {busy === s.key ? "Working…" : s.done ? `${s.label} again` : s.label}
           </button>
@@ -292,14 +292,14 @@ function Reply({
         ? "dead"
         : "live";
   return (
-    <article className="rounded-[--radius-md] border border-[--color-ink-200] bg-[--color-card] p-4">
+    <article className="rounded-md border border-ink-200 bg-card p-4">
       <div className="flex items-center justify-between gap-3">
         <span
-          className={`rounded-[--radius-sm] px-1.5 py-[2px] text-[10px] font-medium ${TONE_CLASS[tone as "won"]}`}
+          className={`rounded-sm px-1.5 py-[2px] text-[10px] font-medium ${TONE_CLASS[tone as "won"]}`}
         >
           {reply.disposition.replace("_", " ")}
         </span>
-        <span className="font-mono text-[11px] text-[--color-ink-400]">
+        <span className="font-mono text-[11px] text-ink-400">
           {clockTime(reply.receivedAt)}
         </span>
       </div>
@@ -315,7 +315,7 @@ function Reply({
           <div className="label">They asked for</div>
           <ul className="mt-1 space-y-0.5">
             {reply.missingInfo.map((m) => (
-              <li key={m} className="text-[12px] text-[--color-ink-700]">
+              <li key={m} className="text-[12px] text-ink-700">
                 {m}
               </li>
             ))}
@@ -337,7 +337,7 @@ function Loading() {
 function Missing() {
   return (
     <div className="grid h-full place-items-center">
-      <p className="text-[13px] text-[--color-ink-500]">
+      <p className="text-[13px] text-ink-500">
         That claim no longer exists.
       </p>
     </div>

@@ -22,10 +22,10 @@ export function Evidence({ clauses, policies, hovered, cited, onHover }: Props) 
   });
 
   return (
-    <section className="border-b border-[--color-ink-200] px-5 py-5">
+    <section className="border-b border-ink-200 px-5 py-5">
       <div className="flex items-baseline justify-between">
         <h3 className="label">Evidence</h3>
-        <span className="tnum text-[11px] text-[--color-ink-400]">
+        <span className="tnum text-[11px] text-ink-400">
           {clauses.filter((c) => c.favourable).length} for ·{" "}
           {clauses.filter((c) => !c.favourable).length} against
         </span>
@@ -39,7 +39,7 @@ export function Evidence({ clauses, policies, hovered, cited, onHover }: Props) 
                 href={p.url}
                 target="_blank"
                 rel="noreferrer"
-                className="block truncate text-[12px] text-[--color-ink-500] underline-offset-2 hover:text-[--color-accent] hover:underline"
+                className="block truncate text-[12px] text-ink-500 underline-offset-2 hover:text-accent hover:underline"
               >
                 {p.title.replace(/\s+/g, " ").trim()}
               </a>
@@ -63,18 +63,18 @@ export function Evidence({ clauses, policies, hovered, cited, onHover }: Props) 
                 transition={{ duration: 0.18 }}
                 onMouseEnter={() => onHover(key)}
                 onMouseLeave={() => onHover(null)}
-                className={`cursor-default rounded-[--radius-md] border p-3 transition-colors ${
+                className={`lift cursor-default rounded-md border p-3 ${
                   lit
-                    ? "border-[--color-accent] bg-[--color-accent-wash]"
-                    : "border-[--color-ink-200] bg-[--color-card]"
+                    ? "border-accent bg-accent-wash"
+                    : "border-ink-200 bg-card"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span
                     className={`rounded-[2px] px-1 font-mono text-[11px] ${
                       lit
-                        ? "bg-[--color-accent] text-white"
-                        : "bg-[--color-sunk] text-[--color-ink-700]"
+                        ? "bg-accent text-white"
+                        : "bg-sunk text-ink-700"
                     }`}
                   >
                     {c.ref}
@@ -82,8 +82,8 @@ export function Evidence({ clauses, policies, hovered, cited, onHover }: Props) 
                   <span
                     className={`h-[6px] w-[6px] rounded-full ${
                       c.favourable
-                        ? "bg-[--color-state-won]"
-                        : "bg-[--color-state-dead]"
+                        ? "bg-state-won"
+                        : "bg-state-dead"
                     }`}
                     title={
                       c.favourable
@@ -96,7 +96,7 @@ export function Evidence({ clauses, policies, hovered, cited, onHover }: Props) 
                 <p className="mt-1.5 text-[12px] font-medium leading-snug">
                   {c.heading}
                 </p>
-                <p className="mt-1 line-clamp-3 font-serif text-[12px] leading-relaxed text-[--color-ink-500]">
+                <p className="mt-1 line-clamp-3 font-serif text-[12px] leading-relaxed text-ink-500">
                   {c.text}
                 </p>
               </motion.article>

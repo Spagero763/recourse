@@ -21,15 +21,15 @@ export function CaseList({ selected, onSelect, onNew }: Props) {
     .reduce((sum, c) => sum + (c.settledAmount ?? 0), 0);
 
   return (
-    <aside className="flex h-full w-full flex-col border-r border-[--color-ink-200] bg-[--color-card] md:w-[300px]">
-      <header className="border-b border-[--color-ink-200] px-5 pb-4 pt-5">
+    <aside className="flex h-full w-full flex-col border-r border-ink-200 bg-card md:w-[300px]">
+      <header className="border-b border-ink-200 px-5 pb-4 pt-5">
         <div className="flex items-baseline justify-between">
           <h1 className="text-[15px] font-semibold tracking-[-0.01em]">
             Recourse
           </h1>
           <button
             onClick={onNew}
-            className="rounded-[--radius-sm] px-2 py-1 text-[12px] font-medium text-[--color-accent] transition-colors hover:bg-[--color-accent-wash]"
+            className="rounded-sm px-2 py-1 text-[12px] font-medium text-accent transition-colors hover:bg-accent-wash"
           >
             New claim
           </button>
@@ -72,14 +72,14 @@ export function CaseList({ selected, onSelect, onNew }: Props) {
                 >
                   <button
                     onClick={() => onSelect(c._id)}
-                    className={`relative w-full border-b border-[--color-ink-100] px-5 py-3.5 text-left transition-colors ${
-                      active ? "bg-[--color-accent-wash]" : "hover:bg-[--color-sunk]"
+                    className={`relative w-full border-b border-ink-100 px-5 py-3.5 text-left transition-[background-color,padding] duration-200 ${
+                      active ? "bg-accent-wash pl-6" : "hover:bg-sunk hover:pl-6"
                     }`}
                   >
                     {active && (
                       <motion.span
                         layoutId="case-marker"
-                        className="absolute inset-y-0 left-0 w-[2px] bg-[--color-accent]"
+                        className="absolute inset-y-0 left-0 w-[2px] bg-accent"
                         transition={{ duration: 0.2 }}
                       />
                     )}
@@ -94,16 +94,16 @@ export function CaseList({ selected, onSelect, onNew }: Props) {
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 truncate text-[12px] text-[--color-ink-500]">
+                    <p className="mt-0.5 truncate text-[12px] text-ink-500">
                       {c.title}
                     </p>
                     <div className="mt-2 flex items-center gap-2">
                       <span
-                        className={`rounded-[--radius-sm] px-1.5 py-[2px] text-[10px] font-medium ${TONE_CLASS[state.tone]}`}
+                        className={`rounded-sm px-1.5 py-[2px] text-[10px] font-medium ${TONE_CLASS[state.tone]}`}
                       >
                         {state.label}
                       </span>
-                      <span className="text-[11px] text-[--color-ink-400]">
+                      <span className="text-[11px] text-ink-400">
                         {relative(c.lastActivityAt)}
                       </span>
                     </div>
@@ -134,8 +134,8 @@ function Skeleton() {
     <div className="space-y-3 p-5">
       {[0, 1, 2].map((i) => (
         <div key={i} className="space-y-2">
-          <div className="h-3 w-2/3 rounded bg-[--color-ink-100]" />
-          <div className="h-2.5 w-1/2 rounded bg-[--color-ink-100]" />
+          <div className="h-3 w-2/3 rounded bg-ink-100" />
+          <div className="h-2.5 w-1/2 rounded bg-ink-100" />
         </div>
       ))}
     </div>
@@ -146,13 +146,13 @@ function Empty({ onNew }: { onNew: () => void }) {
   return (
     <div className="px-5 py-10">
       <p className="text-[13px] font-medium">No claims yet</p>
-      <p className="mt-1 text-[12px] leading-relaxed text-[--color-ink-500]">
+      <p className="mt-1 text-[12px] leading-relaxed text-ink-500">
         Describe something you are owed and Recourse will read the other side's
         own terms before writing to them.
       </p>
       <button
         onClick={onNew}
-        className="mt-4 rounded-[--radius-md] bg-[--color-accent] px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-[--color-accent-hover]"
+        className="mt-4 rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-accent-hover"
       >
         Open a claim
       </button>

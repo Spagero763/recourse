@@ -117,3 +117,71 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+  Elevation is used sparingly and means one thing: this surface is the artefact,
+  not the chrome around it. The letter gets it; nothing else does.
+*/
+.paper {
+  box-shadow:
+    0 1px 1px rgb(22 24 29 / 0.04),
+    0 4px 12px -4px rgb(22 24 29 / 0.06),
+    0 12px 32px -12px rgb(22 24 29 / 0.08);
+}
+
+.lift {
+  box-shadow: 0 1px 2px rgb(22 24 29 / 0.04);
+  transition:
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lift:hover {
+  box-shadow:
+    0 1px 2px rgb(22 24 29 / 0.05),
+    0 6px 16px -6px rgb(22 24 29 / 0.09);
+  transform: translateY(-1px);
+}
+
+/* Faint ruling, the width of a line of type. Reads as paper, not as a grid. */
+.ruled {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-ink-100) 1px,
+    transparent 1px
+  );
+  background-size: 100% 28px;
+  mask-image: radial-gradient(
+    ellipse 80% 60% at 50% 40%,
+    #000 20%,
+    transparent 78%
+  );
+}
+
+/* A hairline that fades out rather than stopping dead. */
+.rule-fade {
+  background: linear-gradient(
+    to right,
+    var(--color-ink-200),
+    var(--color-ink-200) 60%,
+    transparent
+  );
+}
+
+/* Lines animate in from behind a mask: the type arrives, it does not fade. */
+.reveal-line {
+  display: block;
+  overflow: hidden;
+}
+.reveal-line > span {
+  display: block;
+  will-change: transform;
+}
+
+@keyframes seam {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

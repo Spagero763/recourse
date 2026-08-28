@@ -62,10 +62,10 @@ export const STATUS: Record<string, { label: string; tone: Tone }> = {
 };
 
 export const TONE_CLASS: Record<Tone, string> = {
-  wait: "text-[--color-state-wait] bg-[--color-sunk]",
-  live: "text-[--color-state-live] bg-[--color-state-live-wash]",
-  won: "text-[--color-state-won] bg-[--color-state-won-wash]",
-  dead: "text-[--color-state-dead] bg-[--color-state-dead-wash]",
+  wait: "text-state-wait bg-sunk",
+  live: "text-state-live bg-state-live-wash",
+  won: "text-state-won bg-state-won-wash",
+  dead: "text-state-dead bg-state-dead-wash",
 };
 
 // Splits letter text on bracketed clause references so each one can be made

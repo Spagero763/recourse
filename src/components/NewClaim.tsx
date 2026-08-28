@@ -68,7 +68,7 @@ export function NewClaim({
         <h2 className="text-[21px] font-semibold tracking-[-0.015em]">
           What are you owed?
         </h2>
-        <p className="mt-1.5 max-w-[46ch] text-[13px] leading-relaxed text-[--color-ink-500]">
+        <p className="mt-1.5 max-w-[46ch] text-[13px] leading-relaxed text-ink-500">
           Write it the way you would tell a friend. Recourse reads the other
           side's own published terms before it writes anything, and nothing is
           sent until you approve it.
@@ -149,7 +149,7 @@ export function NewClaim({
           </Field>
 
           {error && (
-            <p className="rounded-[--radius-md] bg-[--color-state-dead-wash] px-4 py-3 text-[12px] text-[--color-state-dead]">
+            <p className="rounded-md bg-state-dead-wash px-4 py-3 text-[12px] text-state-dead">
               {error}
             </p>
           )}
@@ -158,14 +158,14 @@ export function NewClaim({
             <button
               type="submit"
               disabled={!ready || busy}
-              className="rounded-[--radius-md] bg-[--color-accent] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[--color-accent-hover] disabled:cursor-not-allowed disabled:bg-[--color-ink-300]"
+              className="rounded-md bg-accent px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-ink-300"
             >
               {busy ? "Opening…" : "Open the claim"}
             </button>
             <button
               type="button"
               onClick={onCancel}
-              className="text-[13px] text-[--color-ink-500] hover:text-[--color-ink-900]"
+              className="text-[13px] text-ink-500 hover:text-ink-900"
             >
               Cancel
             </button>
@@ -177,7 +177,7 @@ export function NewClaim({
 }
 
 const inputClass =
-  "w-full rounded-[--radius-md] border border-[--color-ink-300] bg-[--color-card] px-3 py-2 text-[13px] outline-none transition-colors placeholder:text-[--color-ink-300] focus:border-[--color-accent]";
+  "w-full rounded-md border border-ink-300 bg-card px-3 py-2 text-[13px] outline-none transition-colors placeholder:text-ink-300 focus:border-accent";
 
 function Field({
   label,
@@ -192,7 +192,7 @@ function Field({
     <label className="block">
       <div className="mb-1.5 flex items-baseline justify-between gap-3">
         <span className="text-[12px] font-medium">{label}</span>
-        {hint && <span className="text-[11px] text-[--color-ink-400]">{hint}</span>}
+        {hint && <span className="text-[11px] text-ink-400">{hint}</span>}
       </div>
       {children}
     </label>

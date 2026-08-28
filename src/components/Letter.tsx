@@ -32,9 +32,9 @@ export function Letter({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="mt-7 overflow-hidden rounded-[--radius-md] border border-[--color-ink-200] bg-[--color-card]"
+      className="paper mt-7 overflow-hidden rounded-md border border-ink-200 bg-card"
     >
-      <header className="flex items-center justify-between gap-4 border-b border-[--color-ink-100] px-6 py-3">
+      <header className="flex items-center justify-between gap-4 border-b border-ink-100 px-6 py-3">
         <div className="min-w-0">
           <div className="label">
             {letter.kind === "claim" ? "Opening claim" : letter.kind}
@@ -55,8 +55,8 @@ export function Letter({
         reading measure, and generous leading. It is the artefact the whole
         product exists to produce, so it should not look like a form field.
       */}
-      <div className="px-6 py-7 md:px-10 md:py-9">
-        <p className="max-w-[62ch] whitespace-pre-wrap font-serif text-[15px] leading-[1.75] text-[--color-ink-900]">
+      <div className="px-6 py-8 md:px-12 md:py-12">
+        <p className="max-w-[62ch] whitespace-pre-wrap font-serif text-[15.5px] leading-[1.8] text-ink-900">
           {segments.map((seg, i) =>
             seg.ref && byRef.has(refKey(seg.ref)) ? (
               <button
@@ -67,8 +67,8 @@ export function Letter({
                 onBlur={() => onHover(null)}
                 className={`mx-[1px] rounded-[2px] px-[3px] font-mono text-[12px] align-baseline transition-colors ${
                   hovered === refKey(seg.ref)
-                    ? "bg-[--color-accent] text-white"
-                    : "bg-[--color-accent-wash] text-[--color-accent]"
+                    ? "bg-accent text-white"
+                    : "bg-accent-wash text-accent"
                 }`}
                 title="Show the clause this cites"
               >
@@ -82,8 +82,8 @@ export function Letter({
       </div>
 
       {pending && (
-        <footer className="border-t border-[--color-ink-100] bg-[--color-sunk] px-6 py-4">
-          <p className="text-[12px] text-[--color-ink-500]">
+        <footer className="border-t border-ink-100 bg-sunk px-6 py-4">
+          <p className="text-[12px] text-ink-500">
             Nothing is sent until you approve it.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -92,12 +92,12 @@ export function Letter({
               onChange={(e) => setTo(e.target.value)}
               placeholder="who to send it to"
               type="email"
-              className="min-w-0 flex-1 rounded-[--radius-sm] border border-[--color-ink-300] bg-[--color-card] px-2.5 py-1.5 font-mono text-[12px] outline-none focus:border-[--color-accent]"
+              className="min-w-0 flex-1 rounded-sm border border-ink-300 bg-card px-2.5 py-1.5 font-mono text-[12px] outline-none focus:border-accent"
             />
             <button
               onClick={() => onApprove(to.trim() || undefined)}
               disabled={sending || !to.trim()}
-              className="rounded-[--radius-md] bg-[--color-accent] px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-[--color-accent-hover] disabled:cursor-not-allowed disabled:bg-[--color-ink-300]"
+              className="rounded-md bg-accent px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-ink-300"
             >
               {sending ? "Sending…" : "Approve and send"}
             </button>
@@ -106,8 +106,8 @@ export function Letter({
       )}
 
       {letter.status === "failed" && letter.error && (
-        <footer className="border-t border-[--color-ink-100] bg-[--color-state-dead-wash] px-6 py-3">
-          <p className="text-[12px] text-[--color-state-dead]">{letter.error}</p>
+        <footer className="border-t border-ink-100 bg-state-dead-wash px-6 py-3">
+          <p className="text-[12px] text-state-dead">{letter.error}</p>
         </footer>
       )}
     </motion.section>
