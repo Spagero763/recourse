@@ -8,37 +8,65 @@ import { Id } from "./_generated/dataModel";
 const firecrawl = new FirecrawlClient(components.firecrawl);
 const crawlPool = new Workpool(components.crawlPool, { maxParallelism: 6 });
 
-// Path fragments that reliably sit on the pages a claim is argued from.
-// Ordered by how load-bearing the page usually is.
-const POLICY_SIGNALS: Array<[RegExp, "refund" | "terms" | "other", number]> = [
-  [/refund|money-back|reimburse/i, "refund", 10],
-  [/returns?(-|_|\/|$)/i, "refund", 9],
-  [/cancel(lation)?/i, "refund", 8],
-  [/warrant(y|ies)|guarantee/i, "refund", 7],
-  [/terms(-|_)?(and|of)?(-|_)?(service|use|sale|conditions)?/i, "terms", 6],
-  [/conditions/i, "terms", 5],
-  [/complaint|dispute|grievance/i, "other", 5],
-  [/consumer|your-rights/i, "other", 4],
-  [/legal|policies|policy/i, "other", 3],
+type PolicyKind = "refund" | "terms" | "other";
+
+// Matched against whole hyphen-separated tokens, never as substrings. Slugs
+// like "noise-cancelling-headphones" would otherwise register as a
+// cancellation policy, and "/catalogue/warranties/" as a warranty policy.
+const POLICY_TOKENS: Array<[Set<string>, PolicyKind, number]> = [
+  [new Set(["refund", "refunds"]), "refund", 10],
+  [new Set(["return", "returns"]), "refund", 9],
+  [new Set(["cancellation", "cancellations"]), "refund", 8],
+  [new Set(["warranty", "warranties", "guarantee", "guarantees"]), "refund", 7],
+  [new Set(["terms", "tcs"]), "terms", 6],
+  [new Set(["conditions"]), "terms", 5],
+  [new Set(["complaints", "complaint", "disputes", "grievance"]), "other", 5],
+  [new Set(["consumer", "rights"]), "other", 4],
+  [new Set(["legal", "policy", "policies"]), "other", 3],
 ];
 
-function scoreUrl(url: string): { score: number; kind: "refund" | "terms" | "other" } | null {
+// Sections of a retail site that never hold binding policy text, however
+// their slugs read.
+const COMMERCE_SEGMENTS = new Set([
+  "products", "product", "catalogue", "catalog", "shop", "store", "buy",
+  "basket", "cart", "checkout", "search", "brands", "deals", "offers",
+  "reviews", "blog", "news", "careers", "press",
+]);
+
+function scoreUrl(url: string): { score: number; kind: PolicyKind } | null {
   let path: string;
   try {
-    path = new URL(url).pathname;
+    path = new URL(url).pathname.toLowerCase();
   } catch {
     return null;
   }
-  if (path === "/" || path.length < 2) return null;
 
-  let best: { score: number; kind: "refund" | "terms" | "other" } | null = null;
-  for (const [pattern, kind, weight] of POLICY_SIGNALS) {
-    if (!pattern.test(path)) continue;
-    if (!best || weight > best.score) best = { score: weight, kind };
+  const segments = path.split("/").filter(Boolean);
+  if (segments.length === 0) return null;
+  if (segments.some((s) => COMMERCE_SEGMENTS.has(s))) return null;
+  // Product URLs carry a SKU: a token that is a long digit run.
+  if (segments.some((s) => /(^|-)\d{5,}(-|\.|$)/.test(s))) return null;
+
+  const tokens = new Set(
+    segments.flatMap((s) => s.replace(/\.(html?|php|aspx)$/, "").split(/[-_]/)),
+  );
+
+  let best: { score: number; kind: PolicyKind } | null = null;
+  for (const [words, kind, weight] of POLICY_TOKENS) {
+    let hit = false;
+    for (const word of words) {
+      if (tokens.has(word)) {
+        hit = true;
+        break;
+      }
+    }
+    if (hit && (!best || weight > best.score)) best = { score: weight, kind };
   }
-  // Deep paths are usually help-centre articles rather than the policy itself.
-  if (best && path.split("/").filter(Boolean).length > 4) best.score -= 3;
-  return best;
+  if (!best) return null;
+
+  // Policy pages sit near the root. Anything buried is a help-centre article.
+  if (segments.length > 3) best.score -= 3;
+  return best.score > 0 ? best : null;
 }
 
 function linksFrom(mapped: unknown): Array<string> {
@@ -73,6 +101,10 @@ export const discover = action({
       .sort((a, b) => b.score - a.score)
       .slice(0, args.limit ?? 6);
 
+    // Re-running a scan replaces the previous read rather than layering on it,
+    // so a tightened filter actually removes what it now rejects.
+    await ctx.runMutation(internal.policies.clearForCase, { caseId: args.caseId });
+
     await ctx.runMutation(internal.policies.queue, {
       caseId: args.caseId,
       pages: candidates.map(({ url, kind }) => ({ url, kind })),
@@ -85,6 +117,26 @@ export const discover = action({
     });
 
     return { queued: candidates.length, scanned: linksFrom(mapped).length };
+  },
+});
+
+export const clearForCase = internalMutation({
+  args: { caseId: v.id("cases") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const stale = await ctx.db
+      .query("policies")
+      .withIndex("by_case", (q) => q.eq("caseId", args.caseId))
+      .collect();
+    for (const row of stale) await ctx.db.delete(row._id);
+
+    const orphaned = await ctx.db
+      .query("clauses")
+      .withIndex("by_case", (q) => q.eq("caseId", args.caseId))
+      .collect();
+    for (const row of orphaned) await ctx.db.delete(row._id);
+
+    return null;
   },
 });
 
