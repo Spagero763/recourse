@@ -2,7 +2,7 @@ import { useQuery } from "convex/react";
 import { motion } from "motion/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { STATUS, TONE_CLASS, amount, relative, symbolFor } from "../lib/format";
+import { TONE_CLASS, badgeFor, amount, relative, symbolFor } from "../lib/format";
 
 type Props = {
   selected: Id<"cases"> | null;
@@ -61,7 +61,7 @@ export function CaseList({ selected, onSelect, onNew }: Props) {
         ) : (
           <ul>
             {cases.map((c, i) => {
-              const state = STATUS[c.status] ?? STATUS.drafting;
+              const state = badgeFor(c);
               const active = selected === c._id;
               return (
                 <motion.li

@@ -8,8 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "deploy": "npm run build && npx @convex-dev/static-hosting deploy",
-    "test": "vitest run"
+    "deploy": "npx @convex-dev/static-hosting upload --prod --build",
+    "test": "vitest run",
+    "deploy:dev": "npx @convex-dev/static-hosting upload --build"
   },
   "dependencies": {
     "@agentmail/convex": "^0.1.0",

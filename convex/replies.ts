@@ -76,6 +76,7 @@ export const store = internalMutation({
 
     await ctx.db.patch(args.caseId, {
       status: outcome.status,
+      lastDisposition: args.disposition,
       lastActivityAt: now,
       nextNudgeAt:
         outcome.nudgeInDays === undefined

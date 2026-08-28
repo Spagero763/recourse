@@ -61,6 +61,30 @@ export const STATUS: Record<string, { label: string; tone: Tone }> = {
   closed: { label: "Closed", tone: "dead" },
 };
 
+// What the last reply amounted to, said plainly. A case sitting in
+// "awaiting reply" after an acknowledgement is waiting for a real answer, not
+// for a first one, and the claimant needs to see the difference.
+export const DISPOSITION: Record<string, { label: string; tone: Tone }> = {
+  accepted: { label: "They agreed", tone: "won" },
+  partial: { label: "Part offered", tone: "live" },
+  refused: { label: "Refused", tone: "dead" },
+  info_requested: { label: "They want details", tone: "live" },
+  acknowledged: { label: "Holding reply", tone: "live" },
+  unclear: { label: "Unclear reply", tone: "live" },
+};
+
+export function badgeFor(claim: {
+  status: string;
+  lastDisposition?: string;
+}): { label: string; tone: Tone } {
+  if (claim.status === "resolved") return STATUS.resolved;
+  if (claim.status === "closed") return STATUS.closed;
+  if (claim.lastDisposition) {
+    return DISPOSITION[claim.lastDisposition] ?? STATUS[claim.status];
+  }
+  return STATUS[claim.status] ?? STATUS.drafting;
+}
+
 export const TONE_CLASS: Record<Tone, string> = {
   wait: "text-state-wait bg-sunk",
   live: "text-state-live bg-state-live-wash",

@@ -43,6 +43,10 @@ export default defineSchema({
     lastActivityAt: v.number(),
     nextNudgeAt: v.optional(v.number()),
     settledAmount: v.optional(v.number()),
+    // How the last reply read. "awaiting_reply" cannot distinguish nobody
+    // answering from somebody answering and committing to nothing, and those
+    // are very different situations for the claimant.
+    lastDisposition: v.optional(disposition),
   })
     .index("by_owner", ["ownerId"])
     .index("by_status", ["status"])

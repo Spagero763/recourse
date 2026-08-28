@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 import {
-  STATUS,
   TONE_CLASS,
+  badgeFor,
   amount,
   clockTime,
   countdown,
@@ -45,7 +45,7 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
   if (claim === undefined) return <Loading />;
   if (claim === null) return <Missing />;
 
-  const state = STATUS[claim.status] ?? STATUS.drafting;
+  const state = badgeFor(claim);
   const latest = (letters ?? [])[0];
   const pending = (letters ?? []).find((l) => l.status === "draft");
   const cited = new Set(
