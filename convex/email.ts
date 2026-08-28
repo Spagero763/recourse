@@ -61,6 +61,35 @@ export const onMessageReceived = internalMutation({
 // A claim sent to a dead address leaves the case looking healthy while nothing
 // is happening, which is the worst failure mode for a tool that promises to
 // chase on your behalf. Delivery failures stop the clock and say so.
+const FAILURES: Record<string, "bounced" | "rejected" | "complained"> = {
+  "message.bounced": "bounced",
+  "message.rejected": "rejected",
+  "message.complained": "complained",
+};
+
+export const onEvent = internalMutation({
+  args: { event: v.any() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const kind = FAILURES[args.event?.event_type];
+    if (!kind) return null;
+
+    const threadId: string | undefined =
+      args.event?.message?.thread_id ?? args.event?.thread?.thread_id;
+    const detail: string | undefined =
+      args.event?.bounce?.reason ??
+      args.event?.reject?.reason ??
+      args.event?.delivery?.reason;
+
+    await ctx.runMutation(internal.email.onDeliveryFailed, {
+      threadId,
+      kind,
+      detail: typeof detail === "string" ? detail.slice(0, 300) : undefined,
+    });
+    return null;
+  },
+});
+
 export const onDeliveryFailed = internalMutation({
   args: {
     threadId: v.optional(v.string()),

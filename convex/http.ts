@@ -5,6 +5,9 @@ import { components, internal } from "./_generated/api";
 
 const agentmail = new AgentMail(components.agentmail, {
   onMessageReceived: internal.email.onMessageReceived,
+  // Bounces and complaints arrive here, not on the inbound hook. Without this
+  // a claim sent to a dead address sits in awaiting_reply looking healthy.
+  onEvent: internal.email.onEvent,
 });
 
 const http = httpRouter();
