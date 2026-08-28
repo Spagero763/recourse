@@ -1,0 +1,39 @@
+{
+  "name": "plumbline",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@agentmail/convex": "^0.1.0",
+    "@convex-dev/agent": "^0.7.1",
+    "@convex-dev/rag": "^0.7.6",
+    "@convex-dev/rate-limiter": "^0.3.2",
+    "@convex-dev/static-hosting": "^0.2.1",
+    "@convex-dev/workflow": "^0.4.6",
+    "@convex-dev/workpool": "^0.4.10",
+    "@firecrawl/firecrawl-convex": "^0.1.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "clsx": "^2.1.1",
+    "convex": "^1.45.0",
+    "motion": "^13.1.1",
+    "openai": "^7.8.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "oxlint": "^1.79.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2"
+  }
+}
