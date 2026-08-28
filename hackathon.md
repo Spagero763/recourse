@@ -64,3 +64,29 @@ Scaffolded Vite with React and TypeScript. Installed Convex and the eight
 components above. Wired `convex.config.ts` and wrote the schema: seven tables,
 fifteen indexes, one search index over policy text, one vector index over
 clauses. No deployment yet.
+
+Moved off the anonymous local backend onto a cloud dev deployment. Inbound
+email is the product, and AgentMail cannot deliver a webhook to `127.0.0.1`.
+
+Built the crawl side. `policies.discover` maps the counterparty's whole domain
+and scores every URL against the paths a claim is actually argued from: refunds
+and returns rank highest, cancellation and warranty next, terms below that, and
+deep paths lose points because those are help-centre articles rather than the
+binding policy. Only the top six get scraped, through a workpool at six-way
+parallelism. The point is to read the four pages that matter instead of buying
+a whole website.
+
+Built the extraction side. `clauses.extractForCase` chunks each policy on
+heading boundaries, pulls out individually citable provisions with the
+document's own reference, and embeds them behind the vector index. It keeps
+unfavourable clauses too, because the exclusion they will quote back is worth
+knowing before the letter goes out, not after.
+
+Mounted the AgentMail webhook and routed inbound replies to their case by
+thread id.
+
+Two notes for later. `@agentmail/convex` 0.1.0 types against convex ^1.24 and
+we are on 1.45, where `runMutation` gained an options argument; a cast is
+confined to the one call in `http.ts`. And AgentMail's free tier caps at three
+inboxes, so per-case inbox identity has to come from thread routing rather than
+an inbox per claim.
