@@ -17,6 +17,9 @@ const app = defineApp({
     RECOURSE_MODEL_EXTRACT: v.optional(v.string()),
     RECOURSE_MODEL_DRAFT: v.optional(v.string()),
     AGENTMAIL_API_KEY: v.string(),
+    // Which AgentMail inbox claims are sent from. Its display name is what a
+    // recipient reads before the letter, so the choice is not incidental.
+    AGENTMAIL_INBOX_ID: v.optional(v.string()),
   },
 });
 

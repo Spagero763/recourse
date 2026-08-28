@@ -29,7 +29,13 @@ async function call<T>(
   return (text ? JSON.parse(text) : {}) as T;
 }
 
-export type Inbox = { inbox_id: string; address?: string };
+export type Inbox = {
+  inbox_id: string;
+  // The API calls this "email"; it is the same string as inbox_id today, but
+  // reading it from the documented field rather than relying on that.
+  email?: string;
+  display_name?: string;
+};
 
 export async function listInboxes(): Promise<Array<Inbox>> {
   const body = await call<{ inboxes?: Array<Inbox>; count?: number }>("/inboxes");

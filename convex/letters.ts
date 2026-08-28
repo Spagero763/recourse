@@ -7,6 +7,7 @@ import {
   query,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { env } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import * as agentmail from "./lib/agentmail";
 
@@ -160,19 +161,24 @@ export const ensureInbox = internalAction({
     if (claim?.inboxId) return claim.inboxId;
 
     // AgentMail's free tier allows three inboxes, so the app shares one and
-    // separates cases by thread rather than by address.
+    // separates cases by thread rather than by address. Which one matters:
+    // the inbox's display name is the sender a claims handler sees, and an
+    // unconfigured inbox sends as "AgentMail", which reads as bulk mail.
     const existing = await agentmail.listInboxes();
-    const found = existing[0];
+    const preferred = env.AGENTMAIL_INBOX_ID;
+    const found =
+      (preferred ? existing.find((i) => i.inbox_id === preferred) : undefined) ??
+      existing[0];
 
     let inboxId = found?.inbox_id;
-    let address = found?.address;
+    let address = found?.email;
     if (!inboxId) {
       const created = await agentmail.createInbox({
         username: "claims",
         displayName: "Recourse Claims",
       });
       inboxId = created.inbox_id;
-      address = created.address;
+      address = created.email;
     }
     if (!inboxId) throw new Error("Could not obtain an AgentMail inbox");
 
