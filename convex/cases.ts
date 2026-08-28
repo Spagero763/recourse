@@ -191,3 +191,32 @@ export const remove = mutation({
     return null;
   },
 });
+
+// A claim is written from memory, so the details get corrected as the claimant
+// remembers them. Editing the narrative does not invalidate evidence already
+// gathered; re-running the scan is a separate, deliberate act.
+export const edit = mutation({
+  args: {
+    caseId: v.id("cases"),
+    title: v.optional(v.string()),
+    claimantName: v.optional(v.string()),
+    narrative: v.optional(v.string()),
+    counterpartyEmail: v.optional(v.string()),
+    amountClaimed: v.optional(v.number()),
+    jurisdiction: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const claim = await ctx.db.get(args.caseId);
+    if (!claim) throw new Error("Case not found");
+
+    const { caseId, ...fields } = args;
+    const patch = Object.fromEntries(
+      Object.entries(fields).filter(([, v]) => v !== undefined),
+    );
+    if (Object.keys(patch).length === 0) return null;
+
+    await ctx.db.patch(caseId, { ...patch, lastActivityAt: Date.now() });
+    return null;
+  },
+});

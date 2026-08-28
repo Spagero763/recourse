@@ -194,3 +194,19 @@ send delivered and bound its thread, and a human reply routed back through the
 production webhook. The analyser read that reply as acknowledged rather than
 accepted: an apology carrying no commitment is not a concession, and reading it
 as one would have closed a live claim.
+
+Sending inbox corrected. Claims went out as "AgentMail <afolabi-1949@...>",
+which a claims handler reads as bulk mail before reaching a word of the letter.
+AgentMail has no endpoint to rename an inbox, so the fix was to create a
+correctly named one and add AGENTMAIL_INBOX_ID so the app selects it
+deliberately rather than taking whichever the API returns first. Claims now
+send as "A. Afolabi <recourse-claims@agentmail.to>". The "Sent via AgentMail"
+footer and the List-Unsubscribe header come from sending on the shared domain
+and need a custom domain on a paid plan, so they stay.
+
+Tests cover the three places that produced silent failures rather than errors:
+the policy URL scorer, which once accepted a Sony headphones listing because
+"noisecancelling" contains "cancel"; citation reference matching, which failed
+across "[5.]" and "5." so every letter looked sourced while being untraceable;
+and the letter segmenter, which must never lose or duplicate a character of the
+letter it is splitting.

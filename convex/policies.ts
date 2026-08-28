@@ -33,7 +33,7 @@ const COMMERCE_SEGMENTS = new Set([
   "reviews", "blog", "news", "careers", "press",
 ]);
 
-function scoreUrl(url: string): { score: number; kind: PolicyKind } | null {
+export function scoreUrl(url: string): { score: number; kind: PolicyKind } | null {
   let path: string;
   try {
     path = new URL(url).pathname.toLowerCase();
