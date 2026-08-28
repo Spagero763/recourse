@@ -8,7 +8,15 @@ const EXAMPLES = [
   { what: "Flight delayed 6h", who: "an airline", sum: "520.00" },
 ];
 
-export function Welcome({ onNew }: { onNew: () => void }) {
+export function Welcome({
+  onNew,
+  onOpenExample,
+  exampleLabel,
+}: {
+  onNew: () => void;
+  onOpenExample?: () => void;
+  exampleLabel?: string;
+}) {
   const scope = useRef<HTMLDivElement>(null);
 
   useGSAP(
@@ -97,7 +105,15 @@ export function Welcome({ onNew }: { onNew: () => void }) {
           >
             Open a claim
           </button>
-          <p className="text-[12.5px] text-ink-500">
+          {onOpenExample && (
+            <button
+              onClick={onOpenExample}
+              className="text-[13px] font-medium text-ink-700 underline decoration-ink-300 underline-offset-4 transition-colors hover:text-accent hover:decoration-accent"
+            >
+              Read a finished claim{exampleLabel ? ` against ${exampleLabel}` : ""}
+            </button>
+          )}
+          <p className="w-full text-[12.5px] text-ink-500">
             Nothing is sent until you approve it.
           </p>
         </div>

@@ -16,6 +16,7 @@ import {
 import { Letter } from "./Letter";
 import { Evidence } from "./Evidence";
 import { Timeline } from "./Timeline";
+import { Ladder } from "./Ladder";
 
 export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
   const claim = useQuery(api.cases.get, { caseId });
@@ -67,12 +68,16 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
       <header className="relative border-b border-ink-200 bg-card px-8 pb-5 pt-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-3">
               <span
                 className={`rounded-sm px-1.5 py-[2px] text-[10px] font-medium ${TONE_CLASS[state.tone]}`}
               >
                 {state.label}
               </span>
+              <Ladder
+                stage={claim.stage}
+                done={claim.status === "resolved" || claim.status === "closed"}
+              />
               {claim.nextNudgeAt && (
                 <span className="label">
                   chases {countdown(claim.nextNudgeAt)}
@@ -111,8 +116,14 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
         </div>
 
         {claim.inboxAddress && (
-          <p className="mt-4 font-mono text-[11px] text-ink-400">
-            corresponding as {claim.inboxAddress}
+          <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-ink-400">
+            <span>{claim.inboxAddress}</span>
+            {claim.counterpartyEmail && (
+              <>
+                <span className="text-ink-300">&rarr;</span>
+                <span>{claim.counterpartyEmail}</span>
+              </>
+            )}
           </p>
         )}
       </header>
@@ -249,17 +260,30 @@ function Steps({
   return (
     <ol className="grid gap-px overflow-hidden rounded-md border border-ink-200 bg-ink-200 sm:grid-cols-3">
       {steps.map((s) => (
-        <li key={s.key} className="group relative bg-card p-4 transition-colors hover:bg-paper">
+        <li key={s.key} className="group relative overflow-hidden bg-card p-4 transition-colors hover:bg-paper">
+          {busy === s.key && (
+            <motion.span
+              className="absolute inset-x-0 top-0 h-[2px] origin-left bg-accent"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 18, ease: "linear" }}
+            />
+          )}
           <div className="flex items-center gap-2">
-            <span
-              className={`grid h-[18px] w-[18px] place-items-center rounded-full font-mono text-[10px] ${
-                s.done
-                  ? "bg-state-won text-white"
-                  : "bg-sunk text-ink-400"
-              }`}
+            <motion.span
+              initial={false}
+              animate={{
+                backgroundColor: s.done
+                  ? "var(--color-state-won)"
+                  : "var(--color-sunk)",
+                color: s.done ? "#ffffff" : "var(--color-ink-400)",
+                scale: s.done ? [1, 1.18, 1] : 1,
+              }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="grid h-[18px] w-[18px] place-items-center rounded-full font-mono text-[10px]"
             >
               {s.done ? "✓" : s.n}
-            </span>
+            </motion.span>
             <span className="text-[13px] font-medium">{s.title}</span>
           </div>
           <p className="mt-1.5 min-h-[32px] text-[12px] leading-snug text-ink-500">
