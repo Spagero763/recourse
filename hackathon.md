@@ -186,3 +186,11 @@ correct answer to a forged delivery.
 
 The dev deployment stays alive as the working environment. Editing against the
 URL judges will open is a bad way to spend three weeks.
+
+Full round trip verified on production, not inherited from dev. Firecrawl
+mapped 497 URLs and selected 2 policy pages, extraction pulled 23 provisions,
+the letter bound 3 citations to their source clauses and signed correctly, the
+send delivered and bound its thread, and a human reply routed back through the
+production webhook. The analyser read that reply as acknowledged rather than
+accepted: an apology carrying no commitment is not a concession, and reading it
+as one would have closed a live claim.
