@@ -31,6 +31,7 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
   const [error, setError] = useState<string | null>(null);
 
   const discover = useAction(api.policies.discover);
+  const findStatute = useAction(api.policies.findStatute);
   const extract = useAction(api.extraction.extractForCase);
   const draft = useAction(api.drafting.draftClaim);
   const approve = useMutation(api.letters.approveAndSend);
@@ -136,7 +137,9 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
             clauseCount={clauses?.length ?? 0}
             hasLetter={Boolean(latest)}
             busy={busy}
+            statuteCount={(policies ?? []).filter((p) => p.kind === "statute").length}
             onScan={() => run("scan", () => discover({ caseId }))}
+            onStatute={() => run("statute", () => findStatute({ caseId }))}
             onRead={() => run("read", () => extract({ caseId }))}
             onDraft={() => run("draft", () => draft({ caseId }))}
           />
@@ -201,19 +204,23 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
 function Steps({
   claim,
   policyCount,
+  statuteCount,
   clauseCount,
   hasLetter,
   busy,
   onScan,
+  onStatute,
   onRead,
   onDraft,
 }: {
   claim: Doc<"cases">;
   policyCount: number;
+  statuteCount: number;
   clauseCount: number;
   hasLetter: boolean;
   busy: string | null;
   onScan: () => void;
+  onStatute: () => void;
   onRead: () => void;
   onDraft: () => void;
 }) {
@@ -231,8 +238,23 @@ function Steps({
       label: "Scan site",
     },
     {
-      key: "read",
+      key: "statute",
       n: 2,
+      title: "Find the law",
+      done: statuteCount > 0,
+      detail:
+        statuteCount > 0
+          ? "Statutory rights that override their terms"
+          : claim.jurisdiction
+            ? `Consumer law in ${claim.jurisdiction}`
+            : "Set a jurisdiction to look up the law",
+      action: onStatute,
+      label: "Look up",
+      blocked: !claim.jurisdiction,
+    },
+    {
+      key: "read",
+      n: 3,
       title: "Find the clauses",
       done: clauseCount > 0,
       detail:
@@ -245,7 +267,7 @@ function Steps({
     },
     {
       key: "draft",
-      n: 3,
+      n: 4,
       title: "Write the letter",
       done: hasLetter,
       detail: hasLetter
@@ -258,7 +280,7 @@ function Steps({
   ];
 
   return (
-    <ol className="grid gap-px overflow-hidden rounded-md border border-ink-200 bg-ink-200 sm:grid-cols-3">
+    <ol className="grid gap-px overflow-hidden rounded-md border border-ink-200 bg-ink-200 sm:grid-cols-2 lg:grid-cols-4">
       {steps.map((s) => (
         <li key={s.key} className="group relative overflow-hidden bg-card p-4 transition-colors hover:bg-paper">
           {busy === s.key && (
