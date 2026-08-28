@@ -1,5 +1,6 @@
 import { httpRouter } from "convex/server";
 import { AgentMail } from "@agentmail/convex";
+import { registerStaticRoutes } from "@convex-dev/static-hosting";
 import { httpAction } from "./_generated/server";
 import { components, internal } from "./_generated/api";
 
@@ -26,5 +27,10 @@ http.route({
     agentmail.handleWebhook(ctx as unknown as WebhookCtx, req),
   ),
 });
+
+// Registered last: the static site takes everything the webhook routes above
+// did not claim, so the URLs already given to AgentMail and Firecrawl keep
+// working rather than moving under /api to make room for the frontend.
+registerStaticRoutes(http, components.staticHosting);
 
 export default http;
