@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as analysis from "../analysis.js";
 import type * as cases from "../cases.js";
 import type * as clauses from "../clauses.js";
 import type * as drafting from "../drafting.js";
@@ -18,6 +19,7 @@ import type * as letters from "../letters.js";
 import type * as lib_agentmail from "../lib/agentmail.js";
 import type * as lib_llm from "../lib/llm.js";
 import type * as policies from "../policies.js";
+import type * as replies from "../replies.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +28,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  analysis: typeof analysis;
   cases: typeof cases;
   clauses: typeof clauses;
   drafting: typeof drafting;
@@ -36,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   "lib/agentmail": typeof lib_agentmail;
   "lib/llm": typeof lib_llm;
   policies: typeof policies;
+  replies: typeof replies;
 }>;
 
 /**
