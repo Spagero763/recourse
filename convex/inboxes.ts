@@ -83,10 +83,17 @@ export const webhooksRaw = action({
 
 export const threads = action({
   args: { inboxId: v.string() },
-  returns: v.string(),
+  returns: v.array(v.any()),
   handler: async (_ctx, args) => {
-    const r = await agentmail.listThreads(args.inboxId);
-    return JSON.stringify(r).slice(0, 1200);
+    const r = (await agentmail.listThreads(args.inboxId)) as {
+      threads?: Array<Record<string, unknown>>;
+    };
+    return (r.threads ?? []).map((t) => ({
+      thread_id: String(t.thread_id ?? "").slice(0, 8),
+      messages: t.message_count,
+      updated: t.updated_at,
+      subject: String(t.subject ?? "").slice(0, 40),
+    }));
   },
 });
 
@@ -96,5 +103,32 @@ export const removeWebhook = action({
   handler: async (_ctx, args) => {
     await agentmail.deleteWebhook(args.webhookId);
     return null;
+  },
+});
+
+// Reports the SHAPE of a freshly issued signing secret so a mis-paste can be
+// spotted without the value being shown. Creates a throwaway endpoint and
+// deletes it immediately.
+export const secretShape = action({
+  args: {},
+  returns: v.object({
+    length: v.number(),
+    prefix: v.string(),
+    base64AfterPrefix: v.boolean(),
+  }),
+  handler: async () => {
+    const made = await agentmail.createWebhook({
+      url: "https://example.com/throwaway-shape-probe",
+      eventTypes: ["message.received"],
+    });
+    const secret = made.secret ?? "";
+    await agentmail.deleteWebhook(made.webhook_id);
+
+    const body = secret.startsWith("whsec_") ? secret.slice(6) : secret;
+    return {
+      length: secret.length,
+      prefix: secret.slice(0, 6),
+      base64AfterPrefix: /^[A-Za-z0-9+/=]+$/.test(body),
+    };
   },
 });
