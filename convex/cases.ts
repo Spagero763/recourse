@@ -166,3 +166,28 @@ export const findByThread = internalMutation({
     return match?._id ?? null;
   },
 });
+
+// Deleting a claim takes its evidence and correspondence record with it. The
+// email threads themselves live in AgentMail and are unaffected.
+export const remove = mutation({
+  args: { caseId: v.id("cases") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    for (const table of [
+      "policies",
+      "clauses",
+      "letters",
+      "replies",
+      "attachments",
+      "caseEvents",
+    ] as const) {
+      const rows = await ctx.db
+        .query(table)
+        .withIndex("by_case", (q) => q.eq("caseId", args.caseId))
+        .collect();
+      for (const row of rows) await ctx.db.delete(row._id);
+    }
+    await ctx.db.delete(args.caseId);
+    return null;
+  },
+});
