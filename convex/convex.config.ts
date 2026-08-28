@@ -16,6 +16,7 @@ const app = defineApp({
     OPENAI_API_KEY: v.string(),
     RECOURSE_MODEL_EXTRACT: v.optional(v.string()),
     RECOURSE_MODEL_DRAFT: v.optional(v.string()),
+    AGENTMAIL_API_KEY: v.string(),
   },
 });
 

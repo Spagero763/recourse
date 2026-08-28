@@ -1,5 +1,4 @@
 import { v } from "convex/values";
-import { AgentMail } from "@agentmail/convex";
 import {
   internalAction,
   internalMutation,
@@ -7,15 +6,9 @@ import {
   mutation,
   query,
 } from "./_generated/server";
-import { components, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
-
-const agentmail = new AgentMail(components.agentmail);
-
-// @agentmail/convex 0.1.0 types its ctx against convex ^1.24, before runQuery
-// and runMutation took an options argument. Structurally compatible, so every
-// call into the client goes through here rather than casting at each site.
-const mail = (ctx: unknown) => ctx as never;
+import * as agentmail from "./lib/agentmail";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -126,7 +119,7 @@ export const deliver = internalAction({
     });
 
     try {
-      const outboundId = await agentmail.sendMessage(mail(ctx), inboxId, {
+      const sent = await agentmail.sendMessage(inboxId, {
         to: args.to,
         subject: letter.subject,
         text: letter.body,
@@ -135,15 +128,17 @@ export const deliver = internalAction({
 
       await ctx.runMutation(internal.letters.markSent, {
         letterId: args.letterId,
-        outboundId: String(outboundId),
+        outboundId: sent.message_id ?? "",
       });
 
-      // The thread id lands with the send confirmation rather than the call,
-      // so capture it shortly after and bind the case to that thread.
-      await ctx.scheduler.runAfter(15_000, internal.letters.bindThread, {
-        letterId: args.letterId,
-        outboundId: String(outboundId),
-      });
+      // The send response carries the thread, so the case binds to it
+      // immediately and any reply routes home on the first webhook.
+      if (sent.thread_id) {
+        await ctx.runMutation(internal.letters.attachThread, {
+          letterId: args.letterId,
+          threadId: sent.thread_id,
+        });
+      }
     } catch (error) {
       await ctx.runMutation(internal.letters.markFailed, {
         letterId: args.letterId,
@@ -166,21 +161,18 @@ export const ensureInbox = internalAction({
 
     // AgentMail's free tier allows three inboxes, so the app shares one and
     // separates cases by thread rather than by address.
-    const existing = await agentmail.listInboxes(mail(ctx), {});
-    const inboxes = (existing as { inboxes?: Array<{ inbox_id?: string; address?: string }> })
-      ?.inboxes ?? [];
-    const found = inboxes[0];
+    const existing = await agentmail.listInboxes();
+    const found = existing[0];
 
     let inboxId = found?.inbox_id;
     let address = found?.address;
     if (!inboxId) {
-      const created = await agentmail.createInbox(mail(ctx), {
+      const created = await agentmail.createInbox({
         username: "claims",
         displayName: "Recourse Claims",
       });
-      const shaped = created as { inbox_id?: string; address?: string };
-      inboxId = shaped.inbox_id;
-      address = shaped.address;
+      inboxId = created.inbox_id;
+      address = created.address;
     }
     if (!inboxId) throw new Error("Could not obtain an AgentMail inbox");
 
@@ -190,22 +182,6 @@ export const ensureInbox = internalAction({
       inboxAddress: address ?? inboxId,
     });
     return inboxId;
-  },
-});
-
-export const bindThread = internalAction({
-  args: { letterId: v.id("letters"), outboundId: v.string() },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    const state = await agentmail.status(mail(ctx), args.outboundId as never);
-    const threadId = (state as { threadId?: string })?.threadId;
-    if (!threadId) return null;
-
-    await ctx.runMutation(internal.letters.attachThread, {
-      letterId: args.letterId,
-      threadId,
-    });
-    return null;
   },
 });
 

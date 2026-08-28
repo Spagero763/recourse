@@ -15,6 +15,7 @@ import type * as email from "../email.js";
 import type * as extraction from "../extraction.js";
 import type * as http from "../http.js";
 import type * as letters from "../letters.js";
+import type * as lib_agentmail from "../lib/agentmail.js";
 import type * as lib_llm from "../lib/llm.js";
 import type * as policies from "../policies.js";
 
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   extraction: typeof extraction;
   http: typeof http;
   letters: typeof letters;
+  "lib/agentmail": typeof lib_agentmail;
   "lib/llm": typeof lib_llm;
   policies: typeof policies;
 }>;
