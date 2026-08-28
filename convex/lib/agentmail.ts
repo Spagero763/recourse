@@ -114,3 +114,13 @@ export async function createWebhook(args: {
 export async function rawGet(path: string): Promise<unknown> {
   return await call<unknown>(path);
 }
+
+export async function listThreads(inboxId: string): Promise<unknown> {
+  return await call<unknown>(`/inboxes/${encodeURIComponent(inboxId)}/threads`);
+}
+
+export async function deleteWebhook(webhookId: string): Promise<unknown> {
+  return await call<unknown>(`/webhooks/${encodeURIComponent(webhookId)}`, {
+    method: "DELETE",
+  });
+}

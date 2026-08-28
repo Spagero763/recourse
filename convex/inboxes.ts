@@ -38,12 +38,18 @@ export const webhooks = action({
   },
 });
 
-// Registers an endpoint for every event the app handles. The signing secret
-// is deliberately not returned: read it from the AgentMail console and set it
-// as AGENTMAIL_WEBHOOK_SECRET on the matching deployment.
+// Registers an endpoint for every event the app handles and returns the
+// signing secret, because AgentMail reveals it once at creation and never
+// again: the list endpoint omits it entirely. Run this yourself so the secret
+// prints in your terminal, then set it as AGENTMAIL_WEBHOOK_SECRET on the
+// matching deployment.
 export const registerWebhook = action({
   args: { url: v.string() },
-  returns: v.object({ webhook_id: v.string(), url: v.string() }),
+  returns: v.object({
+    webhook_id: v.string(),
+    url: v.string(),
+    secret: v.string(),
+  }),
   handler: async (_ctx, args) => {
     const created = await agentmail.createWebhook({
       url: args.url,
@@ -56,6 +62,39 @@ export const registerWebhook = action({
         "message.complained",
       ],
     });
-    return { webhook_id: created.webhook_id, url: created.url };
+    return {
+      webhook_id: created.webhook_id,
+      url: created.url,
+      secret: created.secret ?? "",
+    };
+  },
+});
+
+// Does AgentMail hold the reply at all? Separates "the mail never arrived"
+// from "it arrived and the webhook never fired".
+export const webhooksRaw = action({
+  args: {},
+  returns: v.string(),
+  handler: async () => {
+    const r = await agentmail.rawGet("/webhooks");
+    return JSON.stringify(r).replace(/"secret":"[^"]*"/g, '"secret":"<redacted>"').slice(0, 1400);
+  },
+});
+
+export const threads = action({
+  args: { inboxId: v.string() },
+  returns: v.string(),
+  handler: async (_ctx, args) => {
+    const r = await agentmail.listThreads(args.inboxId);
+    return JSON.stringify(r).slice(0, 1200);
+  },
+});
+
+export const removeWebhook = action({
+  args: { webhookId: v.string() },
+  returns: v.null(),
+  handler: async (_ctx, args) => {
+    await agentmail.deleteWebhook(args.webhookId);
+    return null;
   },
 });
