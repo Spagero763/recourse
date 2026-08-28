@@ -109,3 +109,30 @@ Sending goes through `letters.approveAndSend`, which is the only path to a
 counterparty. A draft cannot skip it, and the mutation refuses anything not in
 `draft` status. Delivery is scheduled rather than inline so a slow send never
 blocks the approval.
+
+The AgentMail component turned out to be half-broken on convex 1.45. Everything
+it exposes as an `internalAction` fails to resolve from the app with
+`Couldn't resolve agentmail.lib.listInboxes`; its queries and mutations resolve
+normally. The split is exact. That takes out inbox management, thread reads,
+and `performSend`, which is the worker that actually delivers mail, so
+`enqueueSend` would have queued messages nothing could ever send. The package
+ships hand-authored type declarations noting that Convex codegen "does not
+reliably produce this file in 1.37+", so it typechecks while the runtime
+disagrees.
+
+Outbound now goes through a small REST client in `convex/lib/agentmail.ts`
+against the same v0 endpoints the component wraps. The component keeps the
+halves that work and matter most: signed webhook ingest and the reactive
+`listInboundMessages` query that puts replies on screen as they land.
+
+Round trip proven end to end on the live deployment. A claim citing clauses 5
+and 13 of Currys' own terms went out from afolabi-1949@agentmail.to, a human
+replied from Gmail, AgentMail signed the webhook, the endpoint verified it, and
+the thread id routed the reply back onto the case, which moved itself to
+negotiating. Nothing in that path is mocked.
+
+Three presentation problems to fix before the demo: the sender shows as
+"AgentMail" rather than the claimant, AgentMail attaches List-Unsubscribe
+headers so Gmail offers to unsubscribe from a legal claim, and a "Sent via
+AgentMail" footer sits under the letter. All three tell the reader this is bulk
+mail, which is the opposite of what the letter is arguing.
