@@ -3,7 +3,7 @@ import { FirecrawlClient } from "@firecrawl/firecrawl-convex";
 import { Workpool } from "@convex-dev/workpool";
 import { action, internalAction, internalMutation, query } from "./_generated/server";
 import { components, internal } from "./_generated/api";
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 
 const firecrawl = new FirecrawlClient(components.firecrawl);
 const crawlPool = new Workpool(components.crawlPool, { maxParallelism: 6 });

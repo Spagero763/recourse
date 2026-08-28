@@ -1,1 +1,119 @@
 @import "tailwindcss";
+
+/*
+  Colour carries meaning here and nothing else. The neutral ramp does all the
+  structural work; the ink accent appears only on the act of authorising a
+  letter, and the three state hues only ever report what a case is doing.
+*/
+@theme {
+  --font-sans:
+    "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: "Literata", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Paper, very slightly cool, never pure white and never cream. */
+  --color-paper: #fcfcfb;
+  --color-card: #ffffff;
+  --color-sunk: #f4f4f2;
+
+  /* Neutral ramp biased a touch toward the ink accent so it reads as chosen. */
+  --color-ink-900: #16181d;
+  --color-ink-700: #3b3f48;
+  --color-ink-500: #6b7078;
+  --color-ink-400: #8b9099;
+  --color-ink-300: #c3c6cb;
+  --color-ink-200: #e2e3e5;
+  --color-ink-100: #eeeeef;
+
+  /* The single accent: fountain-pen ink. Reserved for authorising a send. */
+  --color-accent: #1f3d7a;
+  --color-accent-hover: #16336b;
+  --color-accent-wash: #eef2fa;
+
+  /* State, never decoration. */
+  --color-state-wait: #6b7078;
+  --color-state-live: #9a6212;
+  --color-state-live-wash: #fbf3e4;
+  --color-state-won: #1f6b46;
+  --color-state-won-wash: #e8f2ec;
+  --color-state-dead: #9b2c22;
+  --color-state-dead-wash: #f8eae8;
+
+  --radius-sm: 3px;
+  --radius-md: 5px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Every digit that could ever sit in a column does. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Stripe's trick: the symbol is context, the number is the content. */
+.cur {
+  color: var(--color-ink-400);
+  font-weight: 400;
+  margin-right: 0.1em;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-400);
+}
+
+::selection {
+  background: var(--color-accent-wash);
+  color: var(--color-accent);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ink-200);
+  border: 3px solid var(--color-paper);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-300);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

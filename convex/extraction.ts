@@ -3,7 +3,7 @@
 import { v } from "convex/values";
 import { action, internalAction, type ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { Doc, Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { MODELS, chunk, completeJson, embed } from "./lib/llm";
 
 const EXTRACT_SYSTEM = `You read consumer policy documents and statutes and pull out the individual provisions a claim can be argued from.

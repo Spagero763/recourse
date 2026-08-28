@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
 import { caseStatus } from "./schema";
-import { Doc, Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 
 const DAY = 24 * 60 * 60 * 1000;
 

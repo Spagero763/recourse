@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { Doc } from "./_generated/dataModel";
+import type { Doc } from "./_generated/dataModel";
 
 // The escalation ladder. Each rung is a different letter, not the same letter
 // sent louder. Stage 3 is the last one we write: past that the claimant is

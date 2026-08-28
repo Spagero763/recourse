@@ -7,7 +7,7 @@ import {
   query,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { Doc, Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import * as agentmail from "./lib/agentmail";
 
 const DAY = 24 * 60 * 60 * 1000;
