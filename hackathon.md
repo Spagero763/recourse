@@ -136,3 +136,27 @@ Three presentation problems to fix before the demo: the sender shows as
 headers so Gmail offers to unsubscribe from a legal claim, and a "Sent via
 AgentMail" footer sits under the letter. All three tell the reader this is bulk
 mail, which is the opposite of what the letter is arguing.
+
+Reply analysis reads what a company actually committed to rather than how
+warmly they said it. Sympathetic language around a refusal still reads as
+refused. It pulls any offered amount, lists exactly what they asked the
+claimant to supply, and moves the case accordingly. Tested on a real reply: it
+returned info_requested, extracted both requested items, and noted the 30 day
+limit being raised as a defence.
+
+Chasing runs on an hourly cron over a four rung escalation ladder: a light
+chase, a firmer one, a formal letter before further action, then a closing
+letter. Each rung is a different letter rather than the same one sent louder,
+and the ladder stops at the point where the next step is the claimant's
+decision rather than ours. The follow-up sees everything already sent and the
+last reply, so it moves the argument forward instead of repeating it. On the
+test case it distinguished the clause they raised from the claim being made:
+their 30 day term covers returns and faulty goods, not reimbursement of a
+duplicate payment.
+
+Delivery failures now close the case. A bounce, a rejection or a spam complaint
+clears the chase clock and records why. Without that a claim sent to a dead
+address sits in awaiting_reply looking healthy forever, which is the worst
+possible failure for a tool whose promise is that it chased on your behalf.
+Complaints stop the chase for a different reason: continuing is not ours to
+decide.
