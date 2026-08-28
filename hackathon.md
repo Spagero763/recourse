@@ -27,8 +27,8 @@ Nothing leaves the outbox without a human approving it.
 
 | | |
 | --- | --- |
-| Live URL | not deployed yet |
-| Repository | not published yet |
+| Live URL | https://veracious-dinosaur-862.convex.site |
+| Repository | https://github.com/Spagero763/recourse |
 | Demo video | not recorded yet |
 
 ## Convex components registered
@@ -160,3 +160,18 @@ address sits in awaiting_reply looking healthy forever, which is the worst
 possible failure for a tool whose promise is that it chased on your behalf.
 Complaints stop the chase for a different reason: continuing is not ours to
 decide.
+
+Frontend ships through the Convex static hosting component, registered as the
+catch-all in `convex/http.ts` after the webhook routes rather than taking the
+root. Moving the site to `/` would have pushed `/agentmail/webhook` under
+`/api`, breaking a URL already registered with AgentMail, and there was no
+reason to move a stable webhook to make room for a frontend.
+
+One frontend defect worth recording because it was invisible rather than
+obvious: every colour class was written as `bg-[--color-accent]`, the Tailwind
+v3 arbitrary-value form. Tailwind v4 derives utilities from the `@theme`
+namespace instead, so the correct class is `bg-accent`, and the v3 form
+silently generates nothing. 126 references across eight files compiled without
+warning and rendered as unstyled defaults. The custom properties were all
+present in the output, which is what made it look like a design problem rather
+than a build one.
