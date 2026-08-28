@@ -22,6 +22,9 @@ export const disposition = v.union(
 export default defineSchema({
   cases: defineTable({
     ownerId: v.optional(v.string()),
+    // Signed at the bottom of every letter. Without it the claim reads as
+    // machine-generated, which is the fastest way to have it ignored.
+    claimantName: v.optional(v.string()),
     title: v.string(),
     counterparty: v.string(),
     counterpartyDomain: v.optional(v.string()),

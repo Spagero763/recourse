@@ -19,6 +19,7 @@ function hostFrom(raw: string): string | undefined {
 export const open = mutation({
   args: {
     title: v.string(),
+    claimantName: v.optional(v.string()),
     counterparty: v.string(),
     counterpartySite: v.optional(v.string()),
     counterpartyEmail: v.optional(v.string()),
@@ -32,6 +33,7 @@ export const open = mutation({
     const now = Date.now();
     const caseId = await ctx.db.insert("cases", {
       title: args.title,
+      claimantName: args.claimantName,
       counterparty: args.counterparty,
       counterpartyDomain: args.counterpartySite
         ? hostFrom(args.counterpartySite)

@@ -22,9 +22,26 @@ Hard rules:
 - Never invent facts about the purchase: no order numbers, dates, or amounts beyond what the claimant stated. If something important is missing, ask for it in the letter rather than inventing it.
 - "citedRefs" lists the refs you actually cited in the body.
 - No placeholder text. No "[insert X]". The letter must be sendable exactly as written.
-- Sign off as the claimant. Do not name yourself as an agent or mention that software wrote this.`;
+- Sign off with the claimant's name when one is supplied. Never write a placeholder like "The claimant" or "[Your name]". Do not name yourself as an agent or mention that software wrote this.
+- Use a spaced hyphen rather than an em dash anywhere in the subject or body.`;
 
 type Draft = { subject: string; body: string; citedRefs: Array<string> };
+
+// The model writes refs the way it renders them in the letter, bracketed and
+// sometimes with a trailing stop, while the stored ref is bare. Compare on a
+// stripped form so "[5.]" and "5." are the same citation.
+function refKey(raw: string): string {
+  return String(raw)
+    .toLowerCase()
+    .replace(/[[\]()]/g, "")
+    .replace(/[.\s]+$/, "")
+    .trim();
+}
+
+// House style is a spaced hyphen, never an em dash.
+function dashes(text: string): string {
+  return text.replace(/\s*—\s*/g, " - ");
+}
 
 export const draftClaim = action({
   args: { caseId: v.id("cases") },
@@ -72,6 +89,9 @@ export const draftClaim = action({
         ? `Amount sought: ${claim.currency} ${claim.amountClaimed.toFixed(2)}`
         : "Amount sought: not specified by the claimant",
       claim.jurisdiction ? `Jurisdiction: ${claim.jurisdiction}` : "",
+      claim.claimantName
+        ? `Sign the letter as: ${claim.claimantName}`
+        : "The claimant's name is not on file. End after the closing line with no signature block, rather than writing a placeholder.",
     ]
       .filter(Boolean)
       .join("\n");
@@ -90,18 +110,18 @@ export const draftClaim = action({
     // Map the refs the model says it cited back to real clause ids, so the UI
     // can show the source next to each citation. A ref the model invented
     // simply finds no match and is dropped rather than displayed as sourced.
-    const byRef = new Map(clauses.map((c) => [c.ref.toLowerCase(), c._id]));
+    const byRef = new Map(clauses.map((c) => [refKey(c.ref), c._id]));
     const citedClauseIds: Array<Id<"clauses">> = [];
     for (const ref of draft.citedRefs ?? []) {
-      const id = byRef.get(String(ref).toLowerCase());
+      const id = byRef.get(refKey(ref));
       if (id && !citedClauseIds.includes(id)) citedClauseIds.push(id);
     }
 
     return await ctx.runMutation(internal.letters.store, {
       caseId: args.caseId,
       kind: "claim",
-      subject: draft.subject.trim().slice(0, 200),
-      body: draft.body.trim(),
+      subject: dashes(draft.subject.trim()).slice(0, 200),
+      body: dashes(draft.body.trim()),
       citedClauseIds,
     });
   },
