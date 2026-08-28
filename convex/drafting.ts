@@ -240,3 +240,114 @@ export const draftFollowUp = internalAction({
     return letterId;
   },
 });
+
+const REPLY_SYSTEM = `You write the claimant's reply to something the company just said in an ongoing consumer claim.
+
+Return JSON: { "subject": string, "body": string, "citedRefs": string[] }
+
+This is a reply on an existing thread, not a new letter.
+
+Rules:
+- Answer what they actually asked. If they requested specific items, address each one: either it is attached, or say plainly when it will follow, or explain why it is not needed.
+- Never invent a document, an order number, a date or a figure to satisfy a request. If the claimant has not supplied it, say it is being sent rather than fabricating its contents.
+- If they refused or raised a limit, answer it once using the supplied provisions, then restate the remedy sought and a date.
+- Short. Three to seven sentences. This is correspondence, not a fresh argument.
+- Do not re-litigate what the opening letter already established. Reference it in a clause and move on.
+- Keep any reference numbers exactly as supplied. Never invent one.
+- "subject" should be the existing subject line unchanged unless the matter has genuinely moved on.
+- No placeholder text. Use a spaced hyphen rather than an em dash.
+- Sign with the claimant's name when one is supplied, otherwise end after the closing line.`;
+
+export const draftReply = action({
+  args: { caseId: v.id("cases") },
+  returns: v.union(v.null(), v.id("letters")),
+  handler: async (ctx, args): Promise<Id<"letters"> | null> => {
+    const claim: Doc<"cases"> | null = await ctx.runQuery(
+      internal.clauses.caseById,
+      { caseId: args.caseId },
+    );
+    if (!claim) return null;
+
+    const lastReply: Doc<"replies"> | null = await ctx.runQuery(
+      internal.replies.latest,
+      { caseId: args.caseId },
+    );
+    if (!lastReply) {
+      throw new Error("There is nothing to reply to on this case yet");
+    }
+
+    const evidence: Array<Doc<"attachments">> = await ctx.runQuery(
+      internal.attachments.listForCase,
+      { caseId: args.caseId },
+    );
+
+    const [vector] = await embed([
+      `${lastReply.summary} ${lastReply.missingInfo.join(" ")} ${claim.narrative}`,
+    ]);
+    const hits = await ctx.vectorSearch("clauses", "by_embedding", {
+      vector,
+      filter: (q) => q.eq("caseId", args.caseId),
+      limit: 6,
+    });
+    const clauses: Array<Doc<"clauses">> = await ctx.runQuery(
+      internal.clauses.byIds,
+      { ids: hits.map((h) => h._id) },
+    );
+
+    const history: Array<Doc<"letters">> = await ctx.runQuery(
+      internal.letters.sentForCase,
+      { caseId: args.caseId },
+    );
+
+    const context = [
+      `Company: ${claim.counterparty}`,
+      `The original claim: ${claim.narrative}`,
+      claim.amountClaimed !== undefined
+        ? `Amount sought: ${claim.currency} ${claim.amountClaimed.toFixed(2)}`
+        : "",
+      claim.claimantName ? `Sign the letter as: ${claim.claimantName}` : "",
+      `Subject on the thread: ${history[0]?.subject ?? "the claim"}`,
+      "",
+      `THEY SAID (${lastReply.disposition}): ${lastReply.summary}`,
+      lastReply.missingInfo.length > 0
+        ? `THEY ASKED FOR: ${lastReply.missingInfo.join(", ")}`
+        : "THEY ASKED FOR NOTHING SPECIFIC.",
+      "",
+      evidence.length > 0
+        ? `ATTACHED TO THIS REPLY: ${evidence.map((e) => `${e.label} (${e.filename})`).join(", ")}`
+        : "NOTHING IS ATTACHED. Do not claim anything is enclosed.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const material = clauses
+      .map((c) => `[${c.ref}] ${c.heading}\n${c.text}`)
+      .join("\n\n");
+
+    const draft = await completeJson<Draft>({
+      model: MODELS.draft,
+      system: REPLY_SYSTEM,
+      user: `${context}\n\n--- PROVISIONS AVAILABLE ---\n${material}`,
+      maxTokens: 1400,
+    });
+
+    if (!draft?.body?.trim()) return null;
+
+    const byRef = new Map(clauses.map((c) => [refKey(c.ref), c._id]));
+    const citedClauseIds: Array<Id<"clauses">> = [];
+    for (const ref of draft.citedRefs ?? []) {
+      const id = byRef.get(refKey(ref));
+      if (id && !citedClauseIds.includes(id)) citedClauseIds.push(id);
+    }
+
+    return await ctx.runMutation(internal.letters.store, {
+      caseId: args.caseId,
+      kind: "reply",
+      subject: dashes(
+        (draft.subject || history[0]?.subject || "Re: your reply").trim(),
+      ).slice(0, 200),
+      body: dashes(draft.body.trim()),
+      citedClauseIds,
+    });
+  },
+});

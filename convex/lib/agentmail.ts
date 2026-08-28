@@ -80,11 +80,26 @@ export async function sendMessage(
 export async function replyToMessage(
   inboxId: string,
   parentMessageId: string,
-  message: { text: string; labels?: Array<string> },
+  message: {
+    text: string;
+    labels?: Array<string>;
+    attachments?: Array<{
+      filename: string;
+      content: string;
+      content_type?: string;
+    }>;
+  },
 ): Promise<SentMessage> {
   return await call<SentMessage>(
-    `/inboxes/${inboxId}/messages/${parentMessageId}/reply`,
-    { method: "POST", body: { text: message.text, labels: message.labels } },
+    `/inboxes/${encodeURIComponent(inboxId)}/messages/${encodeURIComponent(parentMessageId)}/reply`,
+    {
+      method: "POST",
+      body: {
+        text: message.text,
+        labels: message.labels,
+        attachments: message.attachments,
+      },
+    },
   );
 }
 

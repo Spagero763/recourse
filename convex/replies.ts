@@ -122,3 +122,16 @@ export const latest = internalQuery({
       .order("desc")
       .first(),
 });
+
+export const latestMessageId = internalQuery({
+  args: { caseId: v.id("cases") },
+  returns: v.union(v.null(), v.string()),
+  handler: async (ctx, args): Promise<string | null> => {
+    const last = await ctx.db
+      .query("replies")
+      .withIndex("by_case", (q) => q.eq("caseId", args.caseId))
+      .order("desc")
+      .first();
+    return last?.messageId ?? null;
+  },
+});

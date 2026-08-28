@@ -12,6 +12,7 @@ type Props = {
   byRef: Map<string, Doc<"clauses">>;
   sending: boolean;
   onApprove: (to?: string) => void;
+  onRevise: (body: string) => void;
 };
 
 export function Letter({
@@ -23,8 +24,11 @@ export function Letter({
   byRef,
   sending,
   onApprove,
+  onRevise,
 }: Props) {
   const [to, setTo] = useState(recipient ?? "");
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(letter.body);
   const segments = segmentCitations(letter.body);
 
   return (
@@ -56,6 +60,14 @@ export function Letter({
         product exists to produce, so it should not look like a form field.
       */}
       <div className="px-6 py-8 md:px-12 md:py-12">
+        {editing ? (
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={16}
+            className="w-full max-w-[62ch] resize-y rounded-sm border border-ink-300 bg-card p-3 font-serif text-[15px] leading-[1.75] outline-none focus:border-accent"
+          />
+        ) : (
         <p className="max-w-[62ch] whitespace-pre-wrap font-serif text-[15.5px] leading-[1.8] text-ink-900">
           {segments.map((seg, i) =>
             seg.ref && byRef.has(refKey(seg.ref)) ? (
@@ -79,13 +91,25 @@ export function Letter({
             ),
           )}
         </p>
+        )}
       </div>
 
       {pending && (
         <footer className="border-t border-ink-100 bg-sunk px-6 py-4">
-          <p className="text-[12px] text-ink-500">
-            Nothing is sent until you approve it.
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[12px] text-ink-500">
+              Nothing is sent until you approve it.
+            </p>
+            <button
+              onClick={() => {
+                if (editing) onRevise(text);
+                setEditing((e) => !e);
+              }}
+              className="shrink-0 text-[12px] font-medium text-accent hover:underline"
+            >
+              {editing ? "Save changes" : "Edit the wording"}
+            </button>
+          </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input
               value={to}

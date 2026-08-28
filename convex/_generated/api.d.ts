@@ -9,6 +9,7 @@
  */
 
 import type * as analysis from "../analysis.js";
+import type * as attachments from "../attachments.js";
 import type * as cases from "../cases.js";
 import type * as chase from "../chase.js";
 import type * as clauses from "../clauses.js";
@@ -32,6 +33,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   analysis: typeof analysis;
+  attachments: typeof attachments;
   cases: typeof cases;
   chase: typeof chase;
   clauses: typeof clauses;

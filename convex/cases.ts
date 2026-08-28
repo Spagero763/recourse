@@ -220,3 +220,77 @@ export const edit = mutation({
     return null;
   },
 });
+
+// Settling is the point of the whole exercise, so it is a first-class action
+// rather than a status edit. Recording what actually came back matters: the
+// amount recovered is the only number that proves the tool did anything.
+export const resolve = mutation({
+  args: { caseId: v.id("cases"), settledAmount: v.optional(v.number()) },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const claim = await ctx.db.get(args.caseId);
+    if (!claim) throw new Error("Case not found");
+
+    const settled = args.settledAmount ?? claim.amountClaimed;
+    const now = Date.now();
+    await ctx.db.patch(args.caseId, {
+      status: "resolved",
+      settledAmount: settled,
+      nextNudgeAt: undefined,
+      lastActivityAt: now,
+    });
+    await ctx.db.insert("caseEvents", {
+      caseId: args.caseId,
+      kind: "resolved",
+      detail:
+        settled !== undefined
+          ? `Settled for ${claim.currency} ${settled.toFixed(2)}`
+          : "Marked as settled",
+      at: now,
+    });
+    return null;
+  },
+});
+
+// Closing is giving up, or taking it elsewhere. Distinct from resolving, and
+// it stops the chase either way.
+export const close = mutation({
+  args: { caseId: v.id("cases"), reason: v.optional(v.string()) },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    await ctx.db.patch(args.caseId, {
+      status: "closed",
+      nextNudgeAt: undefined,
+      lastActivityAt: now,
+    });
+    await ctx.db.insert("caseEvents", {
+      caseId: args.caseId,
+      kind: "closed",
+      detail: args.reason?.trim() || "Closed without a settlement",
+      at: now,
+    });
+    return null;
+  },
+});
+
+export const reopen = mutation({
+  args: { caseId: v.id("cases") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    await ctx.db.patch(args.caseId, {
+      status: "negotiating",
+      settledAmount: undefined,
+      lastActivityAt: now,
+      nextNudgeAt: now + 5 * DAY,
+    });
+    await ctx.db.insert("caseEvents", {
+      caseId: args.caseId,
+      kind: "reopened",
+      detail: "Claim reopened",
+      at: now,
+    });
+    return null;
+  },
+});

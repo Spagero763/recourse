@@ -17,6 +17,7 @@ import { Letter } from "./Letter";
 import { Evidence } from "./Evidence";
 import { Timeline } from "./Timeline";
 import { Ladder } from "./Ladder";
+import { CaseActions } from "./CaseActions";
 
 export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
   const claim = useQuery(api.cases.get, { caseId });
@@ -35,6 +36,7 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
   const extract = useAction(api.extraction.extractForCase);
   const draft = useAction(api.drafting.draftClaim);
   const approve = useMutation(api.letters.approveAndSend);
+  const revise = useMutation(api.letters.revise);
 
   const byRef = useMemo(() => {
     const map = new Map<string, Doc<"clauses">>();
@@ -171,8 +173,18 @@ export function CaseView({ caseId }: { caseId: Id<"cases"> }) {
               onApprove={(to) =>
                 run("send", () => approve({ letterId: latest._id, to }))
               }
+              onRevise={(body) =>
+                run("revise", () => revise({ letterId: latest._id, body }))
+              }
             />
           )}
+
+          <CaseActions
+            claim={claim}
+            hasReply={(replies ?? []).length > 0}
+            busy={busy}
+            run={run}
+          />
 
           {(replies ?? []).length > 0 && (
             <section className="mt-8">

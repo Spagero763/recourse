@@ -120,12 +120,36 @@ export const deliver = internalAction({
     });
 
     try {
-      const sent = await agentmail.sendMessage(inboxId, {
-        to: args.to,
-        subject: letter.subject,
-        text: letter.body,
-        labels: ["claim", letter.kind],
-      });
+      // A reply belongs on the thread it answers. Sending it as a fresh email
+      // would start a second conversation the counterparty has to reconcile,
+      // and would lose the quoted history they are working from.
+      const parent =
+        letter.kind === "reply"
+          ? await ctx.runQuery(internal.replies.latestMessageId, {
+              caseId: letter.caseId,
+            })
+          : null;
+
+      const files = parent
+        ? await encodeAttachments(
+            await ctx.runQuery(internal.letters.attachmentsFor, {
+              caseId: letter.caseId,
+            }),
+          )
+        : [];
+
+      const sent = parent
+        ? await agentmail.replyToMessage(inboxId, parent, {
+            text: letter.body,
+            labels: ["claim", letter.kind],
+            attachments: files,
+          })
+        : await agentmail.sendMessage(inboxId, {
+            to: args.to,
+            subject: letter.subject,
+            text: letter.body,
+            labels: ["claim", letter.kind],
+          });
 
       await ctx.runMutation(internal.letters.markSent, {
         letterId: args.letterId,
@@ -287,3 +311,49 @@ export const sentForCase = internalQuery({
     return rows.filter((l) => l.status === "sent");
   },
 });
+
+// Queries cannot read blobs, only mint URLs for them, so the bytes are
+// fetched in the action that sends.
+export const attachmentsFor = internalQuery({
+  args: { caseId: v.id("cases") },
+  returns: v.array(v.object({ filename: v.string(), url: v.string() })),
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("attachments")
+      .withIndex("by_case", (q) => q.eq("caseId", args.caseId))
+      .collect();
+
+    const out: Array<{ filename: string; url: string }> = [];
+    for (const row of rows) {
+      const url = await ctx.storage.getUrl(row.storageId);
+      if (url) out.push({ filename: row.filename, url });
+    }
+    return out;
+  },
+});
+
+// Evidence goes out as base64 alongside the reply. Budgeted deliberately: a
+// claims handler is not helped by a 20MB scan and the API will reject it.
+async function encodeAttachments(
+  files: Array<{ filename: string; url: string }>,
+): Promise<Array<{ filename: string; content: string }>> {
+  const out: Array<{ filename: string; content: string }> = [];
+  let budget = 6_000_000;
+  for (const file of files) {
+    try {
+      const response = await fetch(file.url);
+      if (!response.ok) continue;
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (bytes.byteLength > budget) continue;
+      budget -= bytes.byteLength;
+
+      let binary = "";
+      for (const b of bytes) binary += String.fromCharCode(b);
+      out.push({ filename: file.filename, content: btoa(binary) });
+    } catch {
+      // One unreadable file should not stop the reply going out.
+      continue;
+    }
+  }
+  return out;
+}
