@@ -32,6 +32,9 @@ type Env = {
   readonly CONVEX_SITE_URL: string;
   readonly FIRECRAWL_API_KEY: string;
   readonly FIRECRAWL_WEBHOOK_SECRET: string | undefined;
+  readonly OPENAI_API_KEY: string;
+  readonly RECOURSE_MODEL_DRAFT: string | undefined;
+  readonly RECOURSE_MODEL_EXTRACT: string | undefined;
 };
 
 /**
