@@ -232,3 +232,36 @@ segments. All three real URLs are regression tests.
 Second, re-running a site scan deleted the statute along with the company
 pages, because the scan cleared every policy on the case rather than the ones
 it was replacing. Statutes are found by a different action and now survive.
+
+Closed the gaps between what the product demonstrated and what it could finish.
+An audit for tables never written to and public functions no interface could
+reach turned up more than expected.
+
+`attachments` had zero writes anywhere in the codebase. John Lewis had just
+asked for a receipt and there was no way to supply one. Evidence can now be
+attached to a case and goes out with the next reply, base64 encoded with a size
+budget, and the drafting prompt is told exactly what is enclosed and told not
+to claim anything is enclosed when nothing is.
+
+Replies are now answers rather than chases. The escalation ladder handles
+silence, but a counterparty asking for a receipt is not silence, and chasing
+them for one is the wrong instrument. `drafting.draftReply` reads what they
+specifically requested and answers it, and the reply goes out on the existing
+thread through `replyToMessage` rather than as a fresh email that would start a
+second conversation.
+
+Cases could not be finished. `settledAmount` existed in the schema and the
+sidebar rendered a "Recovered" total from it, and nothing in the codebase could
+ever set it: the interface was showing a number it was structurally incapable
+of producing. Resolve, close and reopen now exist, and resolve records what was
+actually recovered.
+
+`revise` existed with nothing calling it, so a letter could be approved but not
+edited. Approving something unchangeable is not an approval gate. The draft is
+now editable before it is sent.
+
+Also fixed: the production site had been serving a bundle built against the dev
+backend. `upload --prod` without `--build` publishes the local dist, and that
+dist was built from .env.local. The first deploy used --build and was correct;
+every later one silently was not, so the production URL was reading and writing
+dev data. The deploy script now always passes --build.

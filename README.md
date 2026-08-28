@@ -53,6 +53,11 @@ rather than after. The drafted letter answers it pre-emptively:
    louder. The ladder stops where the next step becomes the claimant's decision
    rather than the app's.
 
+Evidence can be attached to a case and is sent with the next reply. Replies go
+out on the existing thread rather than as new mail, so the counterparty keeps
+the history they are working from. A settled claim records what was actually
+recovered, which is the only number that proves any of this worked.
+
 Delivery failures close the case. A claim sent to a dead address that sits in
 `awaiting_reply` looking healthy is the worst possible failure for a tool whose
 promise is that it chased on your behalf.
